@@ -1,6 +1,7 @@
 package com.orden.orden.controller;
 
 
+import com.orden.orden.dto.OrdenResumenDto;
 import com.orden.orden.model.Detalle;
 import com.orden.orden.model.OrdenCompra;
 import com.orden.orden.service.OrdenService;
@@ -76,6 +77,12 @@ public class OrdenController {
     return ordenAsm.toModel(service.confirmar(id));
   }
 
+  @Operation(summary = "Resumen enriquecido de la orden (usuario, juegos, licencias, reseñas)")
+  @GetMapping("/{id}/resumen")
+  public OrdenResumenDto resumen(@PathVariable String id) {
+    return service.construirResumen(id);
+  }
+
   // ---- DETALLES ----
   @Operation(summary = "Listar detalles de una orden")
   @GetMapping("/{id}/detalles")
@@ -132,7 +139,8 @@ public class OrdenController {
         linkTo(methodOn(OrdenController.class).get(o.getId())).withSelfRel(),
         linkTo(methodOn(OrdenController.class).list(null,null, PageRequest.of(0,20))).withRel("collection"),
         linkTo(methodOn(OrdenController.class).listDetalles(o.getId(), PageRequest.of(0,50))).withRel("detalles"),
-        linkTo(methodOn(OrdenController.class).confirmar(o.getId())).withRel("confirmar")
+        linkTo(methodOn(OrdenController.class).confirmar(o.getId())).withRel("confirmar"),
+        linkTo(methodOn(OrdenController.class).resumen(o.getId())).withRel("resumen")
       );
     }
   }

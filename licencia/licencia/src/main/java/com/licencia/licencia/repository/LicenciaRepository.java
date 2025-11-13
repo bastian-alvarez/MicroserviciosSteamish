@@ -12,4 +12,6 @@ public interface LicenciaRepository extends JpaRepository<Licencia, String> {
   Optional<Licencia> findByClave(String clave);
   Page<Licencia> findByJuegoId(String juegoId, Pageable pageable);
   Page<Licencia> findByEstadoId(String estadoId, Pageable pageable);
+  Page<Licencia> findByJuegoIdAndEstadoId(String juegoId, String estadoId, Pageable pageable);
+  Optional<Licencia> findFirstByJuegoIdAndEstadoIdOrderByFechaVencimientoAsc(String juegoId, String estadoId);
 }

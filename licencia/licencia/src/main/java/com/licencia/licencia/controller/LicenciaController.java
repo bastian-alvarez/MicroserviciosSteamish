@@ -1,18 +1,28 @@
 package com.licencia.licencia.controller;
 
+import com.licencia.licencia.dto.LicenciaDtos.AssignLicenciaRequest;
+import com.licencia.licencia.dto.LicenciaDtos.CreateLicenciaRequest;
+import com.licencia.licencia.dto.LicenciaDtos.LicenciaResponse;
+import com.licencia.licencia.dto.LicenciaDtos.UpdateLicenciaRequest;
 import com.licencia.licencia.model.Licencia;
 import com.licencia.licencia.service.LicenciaService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import org.springframework.data.domain.*;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
-import org.springframework.hateoas.*;
+import org.springframework.hateoas.CollectionModel;
+import org.springframework.hateoas.EntityModel;
 import org.springframework.hateoas.server.RepresentationModelAssembler;
-import org.springframework.http.*;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.*;
+import java.util.List;
+
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
 
 @Tag(name = "Licencias", description = "CRUD del microservicio de Licencias")
 @RestController
@@ -26,7 +36,7 @@ public class LicenciaController {
 
   @Operation(summary = "Listar licencias (paginado y filtros)")
   @GetMapping
-  public CollectionModel<EntityModel<Licencia>> list(
+  public CollectionModel<EntityModel<LicenciaResponse>> list(
       @RequestParam(required = false) String juegoId,
       @RequestParam(required = false) String estadoId,
       @PageableDefault(size = 20, sort = "fechaVencimiento") Pageable pageable) {
@@ -39,15 +49,24 @@ public class LicenciaController {
       linkTo(methodOn(LicenciaController.class).create(null)).withRel("create"));
   }
 
+  @Operation(summary = "Listar licencias disponibles por juego")
+  @GetMapping("/disponibles")
+  public ResponseEntity<List<LicenciaResponse>> listDisponibles(
+      @RequestParam String juegoId,
+      @PageableDefault(size = 20) Pageable pageable) {
+    var disponibles = service.listarDisponibles(juegoId, pageable);
+    return ResponseEntity.ok(disponibles.stream().map(assembler::mapToResponse).toList());
+  }
+
   @Operation(summary = "Obtener licencia por id")
   @GetMapping("/{id}")
-  public EntityModel<Licencia> get(@PathVariable String id) {
+  public EntityModel<LicenciaResponse> get(@PathVariable String id) {
     return assembler.toModel(service.obtener(id));
   }
 
   @Operation(summary = "Buscar licencia por clave")
   @GetMapping("/buscar")
-  public ResponseEntity<EntityModel<Licencia>> buscarPorClave(@RequestParam String clave) {
+  public ResponseEntity<EntityModel<LicenciaResponse>> buscarPorClave(@RequestParam String clave) {
     return service.buscarPorClave(clave)
       .map(l -> ResponseEntity.ok(assembler.toModel(l)))
       .orElse(ResponseEntity.notFound().build());
@@ -55,8 +74,14 @@ public class LicenciaController {
 
   @Operation(summary = "Crear licencia")
   @PostMapping
-  public ResponseEntity<EntityModel<Licencia>> create(@Valid @RequestBody Licencia body) {
-    var saved = service.crear(body);
+  public ResponseEntity<EntityModel<LicenciaResponse>> create(@Valid @RequestBody CreateLicenciaRequest body) {
+    var entity = new Licencia();
+    entity.setId(body.id());
+    entity.setClave(body.clave());
+    entity.setFechaVencimiento(body.fechaVencimiento());
+    entity.setEstadoId(body.estadoId());
+    entity.setJuegoId(body.juegoId());
+    var saved = service.crear(entity);
     return ResponseEntity
       .created(linkTo(methodOn(LicenciaController.class).get(saved.getId())).toUri())
       .body(assembler.toModel(saved));
@@ -64,8 +89,29 @@ public class LicenciaController {
 
   @Operation(summary = "Actualizar licencia")
   @PutMapping("/{id}")
-  public EntityModel<Licencia> update(@PathVariable String id, @Valid @RequestBody Licencia body) {
-    return assembler.toModel(service.actualizar(id, body));
+  public EntityModel<LicenciaResponse> update(@PathVariable String id, @Valid @RequestBody UpdateLicenciaRequest body) {
+    var entity = service.obtener(id);
+    entity.setClave(body.clave());
+    if (body.fechaVencimiento() != null) {
+      entity.setFechaVencimiento(body.fechaVencimiento());
+    }
+    entity.setEstadoId(body.estadoId());
+    entity.setJuegoId(body.juegoId());
+    return assembler.toModel(service.actualizar(id, entity));
+  }
+
+  @Operation(summary = "Asignar licencia a un usuario")
+  @PostMapping("/{id}/asignar")
+  public EntityModel<LicenciaResponse> assign(
+      @PathVariable String id,
+      @Valid @RequestBody AssignLicenciaRequest request) {
+    return assembler.toModel(service.asignar(id, request.usuarioId()));
+  }
+
+  @Operation(summary = "Liberar licencia")
+  @PostMapping("/{id}/liberar")
+  public EntityModel<LicenciaResponse> release(@PathVariable String id) {
+    return assembler.toModel(service.liberar(id));
   }
 
   @Operation(summary = "Eliminar licencia")
@@ -75,17 +121,23 @@ public class LicenciaController {
     return ResponseEntity.noContent().build();
   }
 
-  @ExceptionHandler(IllegalArgumentException.class)
-  public ResponseEntity<?> badRequest(IllegalArgumentException ex) {
-    return ResponseEntity.badRequest().body(java.util.Map.of("error","BAD_REQUEST","message",ex.getMessage()));
-  }
-
-  // ---- HATEOAS assembler ----
-  static class LicenciaAssembler implements RepresentationModelAssembler<Licencia, EntityModel<Licencia>> {
-    @Override public EntityModel<Licencia> toModel(Licencia l) {
-      return EntityModel.of(l,
+  static class LicenciaAssembler implements RepresentationModelAssembler<Licencia, EntityModel<LicenciaResponse>> {
+    @Override public EntityModel<LicenciaResponse> toModel(Licencia l) {
+      return EntityModel.of(mapToResponse(l),
         linkTo(methodOn(LicenciaController.class).get(l.getId())).withSelfRel(),
         linkTo(methodOn(LicenciaController.class).list(null,null,PageRequest.of(0,20))).withRel("collection"));
+    }
+
+    LicenciaResponse mapToResponse(Licencia licencia) {
+      return new LicenciaResponse(
+          licencia.getId(),
+          licencia.getClave(),
+          licencia.getFechaVencimiento(),
+          licencia.getEstadoId(),
+          licencia.getJuegoId(),
+          licencia.getUsuarioId(),
+          licencia.getAsignadaEn()
+      );
     }
   }
 }

@@ -29,6 +29,14 @@ public class Detalle {
   @Column(name = "id_orden", length = 20, nullable = false)
   private String ordenId;
 
+  @NotBlank
+  @Column(name = "id_juego", length = 20, nullable = false)
+  private String juegoId;
+
+  @NotNull @DecimalMin("0.0")
+  @Column(name = "precio_unitario", precision = 14, scale = 2, nullable = false)
+  private BigDecimal precioUnitario;
+
   @Column(name = "id_licencia", length = 20)
   private String licenciaId;
 
@@ -45,6 +53,10 @@ public class Detalle {
   public void setOrdenId(String ordenId) { this.ordenId = ordenId; }
   public String getLicenciaId() { return licenciaId; }
   public void setLicenciaId(String licenciaId) { this.licenciaId = licenciaId; }
+  public String getJuegoId() { return juegoId; }
+  public void setJuegoId(String juegoId) { this.juegoId = juegoId; }
+  public BigDecimal getPrecioUnitario() { return precioUnitario; }
+  public void setPrecioUnitario(BigDecimal precioUnitario) { this.precioUnitario = precioUnitario; }
 
   /** Total de esta línea = subtotal + iva (puedes ajustar si tu regla es otra) */
   @Transient

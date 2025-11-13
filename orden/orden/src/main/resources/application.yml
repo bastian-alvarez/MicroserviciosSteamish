@@ -15,3 +15,13 @@ spring:
 springdoc:
   api-docs.path: /api-docs
   swagger-ui.path: /swagger-ui.html
+
+clients:
+  catalogo:
+    base-url: http://localhost:8086
+  usuario:
+    base-url: http://localhost:8081
+  resena:
+    base-url: http://localhost:8085
+  licencia:
+    base-url: http://localhost:8083

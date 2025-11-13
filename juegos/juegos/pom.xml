@@ -11,14 +11,17 @@
     <relativePath/>
   </parent>
 
-  <groupId>com.usuario</groupId>
-  <artifactId>usuario</artifactId>
+  <groupId>com.juegos</groupId>
+  <artifactId>juegos</artifactId>
   <version>0.0.1-SNAPSHOT</version>
-  <name>usuario</name>
-  <description>usuarios</description>
+  <name>juegos</name>
+  <description>Microservicio de juegos</description>
 
   <properties>
     <java.version>21</java.version>
+    <lombok.version>1.18.34</lombok.version>
+    <kotlin.version>1.9.25</kotlin.version>
+    <mockk.version>1.13.12</mockk.version>
   </properties>
 
   <dependencies>
@@ -88,6 +91,30 @@
       <artifactId>spring-security-test</artifactId>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>org.jetbrains.kotlin</groupId>
+      <artifactId>kotlin-stdlib</artifactId>
+      <version>${kotlin.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.jetbrains.kotlin</groupId>
+      <artifactId>kotlin-reflect</artifactId>
+      <version>${kotlin.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.jetbrains.kotlin</groupId>
+      <artifactId>kotlin-test-junit5</artifactId>
+      <version>${kotlin.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>io.mockk</groupId>
+      <artifactId>mockk</artifactId>
+      <version>${mockk.version}</version>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
   <!-- No necesitas agregar jakarta.persistence-api; ya viene transitivo con spring-boot-starter-data-jpa -->
@@ -97,6 +124,41 @@
       <plugin>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-maven-plugin</artifactId>
+      </plugin>
+      <plugin>
+        <groupId>org.jetbrains.kotlin</groupId>
+        <artifactId>kotlin-maven-plugin</artifactId>
+        <version>${kotlin.version}</version>
+        <executions>
+          <execution>
+            <id>compile</id>
+            <phase>compile</phase>
+            <goals>
+              <goal>compile</goal>
+            </goals>
+            <configuration>
+              <sourceDirs>
+                <sourceDir>${project.basedir}/src/main/kotlin</sourceDir>
+                <sourceDir>${project.basedir}/src/main/java</sourceDir>
+              </sourceDirs>
+              <jvmTarget>21</jvmTarget>
+            </configuration>
+          </execution>
+          <execution>
+            <id>test-compile</id>
+            <phase>test-compile</phase>
+            <goals>
+              <goal>test-compile</goal>
+            </goals>
+            <configuration>
+              <sourceDirs>
+                <sourceDir>${project.basedir}/src/test/kotlin</sourceDir>
+                <sourceDir>${project.basedir}/src/test/java</sourceDir>
+              </sourceDirs>
+              <jvmTarget>21</jvmTarget>
+            </configuration>
+          </execution>
+        </executions>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>

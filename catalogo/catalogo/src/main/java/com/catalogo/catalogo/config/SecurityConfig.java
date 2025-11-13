@@ -16,10 +16,14 @@ public class SecurityConfig {
     http
       .csrf(csrf -> csrf.disable())
       .authorizeHttpRequests(auth -> auth
-        .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**", "/api-docs/**").permitAll()
-        .requestMatchers("/api/juegos/**").permitAll()          // GET público (controlamos método en controller)
-        .anyRequest().authenticated()
-      )
+        .requestMatchers(
+            "/swagger-ui.html",
+            "/swagger-ui/**",
+            "/v3/api-docs/**",
+            "/api-docs/**",
+            "/api/juegos/**",
+            "/internal/catalogo/**").permitAll()
+        .anyRequest().authenticated())
       .httpBasic(Customizer.withDefaults());
     return http.build();
   }

@@ -1,8 +1,8 @@
 package com.licencia.licencia.model;
 
-
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
+import java.time.Instant;
 import java.time.LocalDate;
 
 @Entity
@@ -21,14 +21,18 @@ public class Licencia {
   @Column(name = "fecha_vencimiento", nullable = false)
   private LocalDate fechaVencimiento;
 
-  // Referencias a otros microservicios (como IDs simples)
   @Column(name = "id_estado", length = 20)
   private String estadoId;
 
   @Column(name = "id_juego", length = 20)
   private String juegoId;
 
-  // getters y setters
+  @Column(name = "id_usuario", length = 20)
+  private String usuarioId;
+
+  @Column(name = "asignada_en")
+  private Instant asignadaEn;
+
   public String getId() { return id; }
   public void setId(String id) { this.id = id; }
 
@@ -43,4 +47,10 @@ public class Licencia {
 
   public String getJuegoId() { return juegoId; }
   public void setJuegoId(String juegoId) { this.juegoId = juegoId; }
+
+  public String getUsuarioId() { return usuarioId; }
+  public void setUsuarioId(String usuarioId) { this.usuarioId = usuarioId; }
+
+  public Instant getAsignadaEn() { return asignadaEn; }
+  public void setAsignadaEn(Instant asignadaEn) { this.asignadaEn = asignadaEn; }
 }
