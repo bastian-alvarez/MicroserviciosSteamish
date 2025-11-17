@@ -2,22 +2,39 @@ package com.gamestore.gamecatalog.controller;
 
 import com.gamestore.gamecatalog.dto.GameResponse;
 import com.gamestore.gamecatalog.service.GameService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.hateoas.CollectionModel;
+import org.springframework.hateoas.EntityModel;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
 
 @RestController
 @RequestMapping("/api/games")
 @RequiredArgsConstructor
 @CrossOrigin(origins = "*")
+@Tag(name = "Juegos", description = "API para gestión de juegos del catálogo")
 public class GameController {
     private final GameService gameService;
     
+    @Operation(summary = "Listar todos los juegos", description = "Obtiene la lista de juegos con filtros opcionales por categoría, género, descuento o búsqueda")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Lista de juegos obtenida exitosamente")
+    })
     @GetMapping
-    public ResponseEntity<List<GameResponse>> getAllGames(
+    public ResponseEntity<CollectionModel<EntityModel<GameResponse>>> getAllGames(
             @RequestParam(required = false) Long categoria,
             @RequestParam(required = false) Long genero,
             @RequestParam(required = false) Boolean descuento,
@@ -35,42 +52,88 @@ public class GameController {
             games = gameService.getAllGames();
         }
         
-        return ResponseEntity.ok(games);
+        List<EntityModel<GameResponse>> gameResources = games.stream()
+                .map(game -> {
+                    EntityModel<GameResponse> resource = EntityModel.of(game);
+                    resource.add(linkTo(methodOn(GameController.class).getGameById(game.getId())).withSelfRel());
+                    resource.add(linkTo(methodOn(GameController.class).getAllGames(null, null, null, null)).withRel("games"));
+                    return resource;
+                })
+                .collect(Collectors.toList());
+        
+        CollectionModel<EntityModel<GameResponse>> collection = CollectionModel.of(gameResources);
+        collection.add(linkTo(methodOn(GameController.class).getAllGames(categoria, genero, descuento, search)).withSelfRel());
+        collection.add(linkTo(methodOn(CategoryController.class).getAllCategories()).withRel("categories"));
+        collection.add(linkTo(methodOn(GenreController.class).getAllGenres()).withRel("genres"));
+        
+        return ResponseEntity.ok(collection);
     }
     
+    @Operation(summary = "Obtener juego por ID", description = "Obtiene los detalles de un juego específico por su ID")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Juego encontrado",
+                content = @Content(schema = @Schema(implementation = GameResponse.class))),
+        @ApiResponse(responseCode = "404", description = "Juego no encontrado")
+    })
     @GetMapping("/{id}")
-    public ResponseEntity<GameResponse> getGameById(@PathVariable Long id) {
+    public ResponseEntity<EntityModel<GameResponse>> getGameById(@PathVariable Long id) {
         try {
             GameResponse game = gameService.getGameById(id);
-            return ResponseEntity.ok(game);
+            EntityModel<GameResponse> resource = EntityModel.of(game);
+            
+            resource.add(linkTo(methodOn(GameController.class).getGameById(id)).withSelfRel());
+            resource.add(linkTo(methodOn(GameController.class).getAllGames(null, null, null, null)).withRel("games"));
+            resource.add(linkTo(methodOn(GameController.class).updateStock(id, Map.of("stock", 0))).withRel("update-stock"));
+            
+            return ResponseEntity.ok(resource);
         } catch (RuntimeException e) {
             return ResponseEntity.notFound().build();
         }
     }
     
+    @Operation(summary = "Actualizar stock de un juego", description = "Actualiza el stock disponible de un juego")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Stock actualizado exitosamente"),
+        @ApiResponse(responseCode = "400", description = "Datos inválidos")
+    })
     @PutMapping("/{id}/stock")
-    public ResponseEntity<?> updateStock(
+    public ResponseEntity<EntityModel<GameResponse>> updateStock(
             @PathVariable Long id,
             @RequestBody Map<String, Integer> request) {
         try {
             Integer newStock = request.get("stock");
             GameResponse game = gameService.updateStock(id, newStock);
-            return ResponseEntity.ok(game);
+            EntityModel<GameResponse> resource = EntityModel.of(game);
+            
+            resource.add(linkTo(methodOn(GameController.class).updateStock(id, request)).withSelfRel());
+            resource.add(linkTo(methodOn(GameController.class).getGameById(id)).withRel("game"));
+            
+            return ResponseEntity.ok(resource);
         } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+            throw new RuntimeException(e.getMessage());
         }
     }
     
+    @Operation(summary = "Disminuir stock de un juego", description = "Disminuye el stock disponible de un juego por una cantidad específica")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Stock disminuido exitosamente"),
+        @ApiResponse(responseCode = "400", description = "Stock insuficiente o datos inválidos")
+    })
     @PostMapping("/{id}/decrease-stock")
-    public ResponseEntity<?> decreaseStock(
+    public ResponseEntity<EntityModel<GameResponse>> decreaseStock(
             @PathVariable Long id,
             @RequestBody Map<String, Integer> request) {
         try {
             Integer quantity = request.get("quantity");
             GameResponse game = gameService.decreaseStock(id, quantity);
-            return ResponseEntity.ok(game);
+            EntityModel<GameResponse> resource = EntityModel.of(game);
+            
+            resource.add(linkTo(methodOn(GameController.class).decreaseStock(id, request)).withSelfRel());
+            resource.add(linkTo(methodOn(GameController.class).getGameById(id)).withRel("game"));
+            
+            return ResponseEntity.ok(resource);
         } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+            throw new RuntimeException(e.getMessage());
         }
     }
 }

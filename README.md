@@ -14,10 +14,22 @@ Arquitectura de microservicios para la aplicación GameStore usando Java Spring 
 ### Prerrequisitos
 - Java 17+ instalado
 - Maven 3.6+ instalado
-- XAMPP con MySQL corriendo
+- **Laragon** con MySQL corriendo (recomendado) o XAMPP
 - Puerto 3306 disponible para MySQL
 
 ### 1. Configurar Bases de Datos
+
+#### Opción A: Usando Laragon (Recomendado)
+
+1. Inicia Laragon y asegúrate de que MySQL esté corriendo
+2. Abre phpMyAdmin desde Laragon: `http://localhost/phpmyadmin`
+3. Ve a la pestaña **SQL**
+4. Copia y pega el contenido completo del archivo `setup-databases.sql`
+5. Haz clic en **Ejecutar**
+
+**📖 Ver guía completa:** [GUIA_LARAGON.md](GUIA_LARAGON.md)
+
+#### Opción B: Usando XAMPP
 
 Ejecutar el script SQL en MySQL (phpMyAdmin o línea de comandos):
 
@@ -26,45 +38,80 @@ Ejecutar el script SQL en MySQL (phpMyAdmin o línea de comandos):
 source setup-databases.sql
 ```
 
-O ejecutar manualmente cada script SQL desde cada carpeta de servicio.
+### 2. Configurar Conexión a Base de Datos
 
-### 2. Configurar cada servicio
+Los archivos `application.properties` ya están configurados para Laragon por defecto:
 
-Editar `src/main/resources/application.properties` en cada servicio:
+- **Host:** `localhost`
+- **Puerto:** `3306`
+- **Usuario:** `root`
+- **Contraseña:** (vacía por defecto en Laragon)
+
+Si tu MySQL tiene contraseña, edita los archivos `application.properties` de cada servicio:
 
 ```properties
-spring.datasource.username=root
 spring.datasource.password=tu_password_mysql
 ```
 
-### 3. Compilar y ejecutar cada servicio
+**Archivos a editar:**
+- `auth-service/src/main/resources/application.properties`
+- `game-catalog-service/src/main/resources/application.properties`
+- `order-service/src/main/resources/application.properties`
+- `library-service/src/main/resources/application.properties`
 
-#### Auth Service
+### 3. Compilar y ejecutar los servicios
+
+El proyecto tiene un **POM padre** que gestiona todos los microservicios como módulos Maven.
+
+#### Opción A: Compilar todos los servicios desde la raíz
+
+```bash
+# Desde la raíz del proyecto
+mvn clean install
+```
+
+Esto compilará todos los microservicios en un solo comando.
+
+#### Opción B: Ejecutar cada servicio individualmente
+
+**Auth Service (Puerto 3001)**
 ```bash
 cd auth-service
-mvn clean install
 mvn spring-boot:run
 ```
 
-#### Game Catalog Service
+**Game Catalog Service (Puerto 3002)**
 ```bash
 cd game-catalog-service
-mvn clean install
 mvn spring-boot:run
 ```
 
-#### Order Service
+**Order Service (Puerto 3003)**
 ```bash
 cd order-service
-mvn clean install
 mvn spring-boot:run
 ```
 
-#### Library Service
+**Library Service (Puerto 3004)**
 ```bash
 cd library-service
-mvn clean install
 mvn spring-boot:run
+```
+
+#### Opción C: Ejecutar un servicio específico desde la raíz
+
+```bash
+# Ejecutar auth-service
+mvn spring-boot:run -pl auth-service
+
+# Ejecutar game-catalog-service
+mvn spring-boot:run -pl game-catalog-service
+
+# Ejecutar order-service
+mvn spring-boot:run -pl order-service
+
+# Ejecutar library-service
+mvn spring-boot:run -pl library-service
 ```
 
 ## 📡 Puertos y Endpoints
@@ -120,6 +167,14 @@ mvn spring-boot:run
 - Lombok
 - Spring WebFlux (para comunicación entre servicios)
 
-## 📚 Documentación Individual
+## 📚 Documentación
 
-Cada servicio tiene su propio README.md con documentación detallada.
+- **Guía de Laragon:** [GUIA_LARAGON.md](GUIA_LARAGON.md) - Configuración paso a paso con Laragon
+- **Swagger UI:** Cada servicio tiene documentación interactiva en `/swagger-ui.html`
+- **OpenAPI:** Especificaciones disponibles en `/api-docs` de cada servicio
+- Cada servicio tiene su propio README.md con documentación detallada
+
+## 🚀 Scripts Útiles
+
+- **`ejecutar-servicios.bat`** - Script interactivo para ejecutar los servicios en Windows
+- **`verificar-conexion.bat`** - Verifica la conexión a MySQL antes de iniciar los servicios

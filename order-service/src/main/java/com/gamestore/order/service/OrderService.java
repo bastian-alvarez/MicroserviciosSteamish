@@ -46,11 +46,14 @@ public class OrderService {
         
         order = orderRepository.save(order);
         
+        // Guardar el ID en una variable final para usar en el lambda
+        final Long ordenId = order.getId();
+        
         // Crear detalles
         List<OrderDetail> detalles = request.getItems().stream()
                 .map(item -> {
                     OrderDetail detail = new OrderDetail();
-                    detail.setOrdenId(order.getId());
+                    detail.setOrdenId(ordenId);
                     detail.setJuegoId(item.getJuegoId());
                     detail.setCantidad(item.getCantidad());
                     Double precio = getGamePrice(item.getJuegoId());
