@@ -68,6 +68,28 @@ public class GameService {
         return mapToResponse(game);
     }
     
+    @Transactional
+    public GameResponse createGame(com.gamestore.gamecatalog.dto.CreateGameRequest request) {
+        // Validar que la categoría y género existan (opcional, pero recomendado)
+        // Por ahora asumimos que existen
+        
+        Game game = new Game();
+        game.setNombre(request.getNombre());
+        game.setDescripcion(request.getDescripcion() != null ? request.getDescripcion() : "");
+        game.setPrecio(request.getPrecio());
+        game.setStock(request.getStock() != null ? request.getStock() : 0);
+        game.setImagenUrl(request.getImagenUrl());
+        game.setDesarrollador(request.getDesarrollador());
+        game.setFechaLanzamiento(request.getFechaLanzamiento());
+        game.setCategoriaId(request.getCategoriaId());
+        game.setGeneroId(request.getGeneroId());
+        game.setDescuento(request.getDescuento() != null ? request.getDescuento() : 0);
+        game.setActivo(request.getActivo() != null ? request.getActivo() : true);
+        
+        game = gameRepository.save(game);
+        return mapToResponse(game);
+    }
+    
     private GameResponse mapToResponse(Game game) {
         GameResponse response = new GameResponse();
         response.setId(game.getId());

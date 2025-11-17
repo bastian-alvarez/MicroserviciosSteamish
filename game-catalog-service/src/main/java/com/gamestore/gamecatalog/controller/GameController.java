@@ -1,7 +1,9 @@
 package com.gamestore.gamecatalog.controller;
 
+import com.gamestore.gamecatalog.dto.CreateGameRequest;
 import com.gamestore.gamecatalog.dto.GameResponse;
 import com.gamestore.gamecatalog.service.GameService;
+import jakarta.validation.Valid;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -109,6 +111,28 @@ public class GameController {
             resource.add(linkTo(methodOn(GameController.class).getGameById(id)).withRel("game"));
             
             return ResponseEntity.ok(resource);
+        } catch (RuntimeException e) {
+            throw new RuntimeException(e.getMessage());
+        }
+    }
+    
+    @Operation(summary = "Crear nuevo juego", description = "Crea un nuevo juego en el catálogo con los datos proporcionados")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "201", description = "Juego creado exitosamente",
+                content = @Content(schema = @Schema(implementation = GameResponse.class))),
+        @ApiResponse(responseCode = "400", description = "Datos inválidos o faltan campos requeridos")
+    })
+    @PostMapping
+    public ResponseEntity<EntityModel<GameResponse>> createGame(@Valid @RequestBody CreateGameRequest request) {
+        try {
+            GameResponse game = gameService.createGame(request);
+            EntityModel<GameResponse> resource = EntityModel.of(game);
+            
+            resource.add(linkTo(methodOn(GameController.class).createGame(request)).withSelfRel());
+            resource.add(linkTo(methodOn(GameController.class).getGameById(game.getId())).withRel("game"));
+            resource.add(linkTo(methodOn(GameController.class).getAllGames(null, null, null, null)).withRel("games"));
+            
+            return ResponseEntity.status(201).body(resource);
         } catch (RuntimeException e) {
             throw new RuntimeException(e.getMessage());
         }
