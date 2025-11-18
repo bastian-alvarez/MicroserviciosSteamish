@@ -96,5 +96,28 @@ public class OrderController {
             return ResponseEntity.notFound().build();
         }
     }
+    
+    @Operation(summary = "Obtener todas las órdenes", description = "Obtiene todas las órdenes del sistema (solo administradores)")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Lista de órdenes obtenida exitosamente")
+    })
+    @GetMapping
+    public ResponseEntity<CollectionModel<EntityModel<OrderResponse>>> getAllOrders() {
+        List<OrderResponse> orders = orderService.getAllOrders();
+        
+        List<EntityModel<OrderResponse>> orderResources = orders.stream()
+                .map(order -> {
+                    EntityModel<OrderResponse> resource = EntityModel.of(order);
+                    resource.add(linkTo(methodOn(OrderController.class).getOrderById(order.getId())).withSelfRel());
+                    resource.add(linkTo(methodOn(OrderController.class).getOrdersByUserId(order.getUserId())).withRel("user-orders"));
+                    return resource;
+                })
+                .collect(Collectors.toList());
+        
+        CollectionModel<EntityModel<OrderResponse>> collection = CollectionModel.of(orderResources);
+        collection.add(linkTo(methodOn(OrderController.class).getAllOrders()).withSelfRel());
+        
+        return ResponseEntity.ok(collection);
+    }
 }
 

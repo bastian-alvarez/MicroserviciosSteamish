@@ -11,6 +11,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -78,6 +79,71 @@ public class AuthService {
         }
         
         throw new RuntimeException("Credenciales inválidas");
+    }
+    
+    public List<UserResponse> getAllUsers() {
+        return userRepository.findAll().stream()
+                .map(this::mapToUserResponse)
+                .collect(java.util.stream.Collectors.toList());
+    }
+    
+    public UserResponse getUserById(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+        return mapToUserResponse(user);
+    }
+    
+    @Transactional
+    public UserResponse updateUser(Long userId, com.gamestore.auth.dto.UpdateUserRequest request) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+        
+        if (request.getName() != null) {
+            user.setName(request.getName());
+        }
+        if (request.getEmail() != null && !request.getEmail().equals(user.getEmail())) {
+            if (userRepository.existsByEmail(request.getEmail())) {
+                throw new RuntimeException("El email ya está en uso");
+            }
+            user.setEmail(request.getEmail());
+        }
+        if (request.getPhone() != null) {
+            user.setPhone(request.getPhone());
+        }
+        if (request.getGender() != null) {
+            user.setGender(request.getGender());
+        }
+        if (request.getIsBlocked() != null) {
+            user.setIsBlocked(request.getIsBlocked());
+        }
+        
+        user = userRepository.save(user);
+        return mapToUserResponse(user);
+    }
+    
+    @Transactional
+    public void deleteUser(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+        userRepository.delete(user);
+    }
+    
+    @Transactional
+    public UserResponse blockUser(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+        user.setIsBlocked(true);
+        user = userRepository.save(user);
+        return mapToUserResponse(user);
+    }
+    
+    @Transactional
+    public UserResponse unblockUser(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+        user.setIsBlocked(false);
+        user = userRepository.save(user);
+        return mapToUserResponse(user);
     }
     
     private UserResponse mapToUserResponse(User user) {

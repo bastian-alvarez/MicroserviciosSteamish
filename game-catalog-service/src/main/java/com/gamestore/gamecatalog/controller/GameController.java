@@ -2,6 +2,7 @@ package com.gamestore.gamecatalog.controller;
 
 import com.gamestore.gamecatalog.dto.CreateGameRequest;
 import com.gamestore.gamecatalog.dto.GameResponse;
+import com.gamestore.gamecatalog.dto.UpdateGameRequest;
 import com.gamestore.gamecatalog.service.GameService;
 import jakarta.validation.Valid;
 import io.swagger.v3.oas.annotations.Operation;
@@ -154,6 +155,51 @@ public class GameController {
             
             resource.add(linkTo(methodOn(GameController.class).decreaseStock(id, request)).withSelfRel());
             resource.add(linkTo(methodOn(GameController.class).getGameById(id)).withRel("game"));
+            
+            return ResponseEntity.ok(resource);
+        } catch (RuntimeException e) {
+            throw new RuntimeException(e.getMessage());
+        }
+    }
+    
+    @Operation(summary = "Actualizar juego completo", description = "Actualiza los datos de un juego existente (solo administradores)")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Juego actualizado exitosamente",
+                content = @Content(schema = @Schema(implementation = GameResponse.class))),
+        @ApiResponse(responseCode = "400", description = "Datos inválidos"),
+        @ApiResponse(responseCode = "404", description = "Juego no encontrado")
+    })
+    @PutMapping("/{id}")
+    public ResponseEntity<EntityModel<GameResponse>> updateGame(
+            @PathVariable Long id,
+            @Valid @RequestBody UpdateGameRequest request) {
+        try {
+            GameResponse game = gameService.updateGame(id, request);
+            EntityModel<GameResponse> resource = EntityModel.of(game);
+            
+            resource.add(linkTo(methodOn(GameController.class).updateGame(id, request)).withSelfRel());
+            resource.add(linkTo(methodOn(GameController.class).getGameById(id)).withRel("game"));
+            resource.add(linkTo(methodOn(GameController.class).getAllGames(null, null, null, null)).withRel("games"));
+            
+            return ResponseEntity.ok(resource);
+        } catch (RuntimeException e) {
+            throw new RuntimeException(e.getMessage());
+        }
+    }
+    
+    @Operation(summary = "Eliminar juego", description = "Elimina un juego del catálogo (solo administradores)")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Juego eliminado exitosamente"),
+        @ApiResponse(responseCode = "404", description = "Juego no encontrado")
+    })
+    @DeleteMapping("/{id}")
+    public ResponseEntity<EntityModel<Map<String, String>>> deleteGame(@PathVariable Long id) {
+        try {
+            gameService.deleteGame(id);
+            Map<String, String> response = Map.of("message", "Juego eliminado exitosamente");
+            EntityModel<Map<String, String>> resource = EntityModel.of(response);
+            
+            resource.add(linkTo(methodOn(GameController.class).getAllGames(null, null, null, null)).withRel("games"));
             
             return ResponseEntity.ok(resource);
         } catch (RuntimeException e) {

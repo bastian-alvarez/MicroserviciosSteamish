@@ -90,6 +90,56 @@ public class GameService {
         return mapToResponse(game);
     }
     
+    @Transactional
+    public GameResponse updateGame(Long id, com.gamestore.gamecatalog.dto.UpdateGameRequest request) {
+        Game game = gameRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Juego no encontrado"));
+        
+        if (request.getNombre() != null) {
+            game.setNombre(request.getNombre());
+        }
+        if (request.getDescripcion() != null) {
+            game.setDescripcion(request.getDescripcion());
+        }
+        if (request.getPrecio() != null) {
+            game.setPrecio(request.getPrecio());
+        }
+        if (request.getStock() != null) {
+            game.setStock(request.getStock());
+        }
+        if (request.getImagenUrl() != null) {
+            game.setImagenUrl(request.getImagenUrl());
+        }
+        if (request.getDesarrollador() != null) {
+            game.setDesarrollador(request.getDesarrollador());
+        }
+        if (request.getFechaLanzamiento() != null) {
+            game.setFechaLanzamiento(request.getFechaLanzamiento());
+        }
+        if (request.getCategoriaId() != null) {
+            game.setCategoriaId(request.getCategoriaId());
+        }
+        if (request.getGeneroId() != null) {
+            game.setGeneroId(request.getGeneroId());
+        }
+        if (request.getDescuento() != null) {
+            game.setDescuento(request.getDescuento());
+        }
+        if (request.getActivo() != null) {
+            game.setActivo(request.getActivo());
+        }
+        
+        game = gameRepository.save(game);
+        return mapToResponse(game);
+    }
+    
+    @Transactional
+    public void deleteGame(Long id) {
+        Game game = gameRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Juego no encontrado"));
+        gameRepository.delete(game);
+    }
+    
     private GameResponse mapToResponse(Game game) {
         GameResponse response = new GameResponse();
         response.setId(game.getId());
