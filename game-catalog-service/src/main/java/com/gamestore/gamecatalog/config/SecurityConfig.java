@@ -34,12 +34,13 @@ public class SecurityConfig {
                 ).permitAll()
                 // GET endpoints públicos (lectura)
                 .requestMatchers("GET", "/api/games", "/api/games/{id}", "/api/categories", "/api/genres").permitAll()
-                // Endpoints de administrador (POST, PUT, DELETE)
+                // Endpoints de administrador
+                .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                // Mantener compatibilidad con endpoints antiguos (deprecated)
                 .requestMatchers("POST", "/api/games").hasRole("ADMIN")
                 .requestMatchers("PUT", "/api/games/**").hasRole("ADMIN")
                 .requestMatchers("POST", "/api/games/**/stock", "/api/games/**/decrease-stock").hasRole("ADMIN")
                 .requestMatchers("DELETE", "/api/games/**").hasRole("ADMIN")
-                .requestMatchers("/api/admin/**").hasRole("ADMIN")
                 .anyRequest().authenticated()
             )
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);

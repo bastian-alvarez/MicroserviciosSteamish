@@ -94,12 +94,13 @@ public class GameController {
         }
     }
     
-    @Operation(summary = "Actualizar stock de un juego", description = "Actualiza el stock disponible de un juego")
+    @Operation(summary = "Actualizar stock de un juego", description = "[DEPRECATED] Usar /api/admin/games/{id}/stock. Actualiza el stock disponible de un juego (solo administradores)")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "Stock actualizado exitosamente"),
         @ApiResponse(responseCode = "400", description = "Datos inválidos")
     })
     @PutMapping("/{id}/stock")
+    @Deprecated
     public ResponseEntity<EntityModel<GameResponse>> updateStock(
             @PathVariable Long id,
             @RequestBody Map<String, Integer> request) {
@@ -117,13 +118,14 @@ public class GameController {
         }
     }
     
-    @Operation(summary = "Crear nuevo juego", description = "Crea un nuevo juego en el catálogo con los datos proporcionados")
+    @Operation(summary = "Crear nuevo juego", description = "[DEPRECATED] Usar /api/admin/games. Crea un nuevo juego en el catálogo con los datos proporcionados (solo administradores)")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "201", description = "Juego creado exitosamente",
                 content = @Content(schema = @Schema(implementation = GameResponse.class))),
         @ApiResponse(responseCode = "400", description = "Datos inválidos o faltan campos requeridos")
     })
     @PostMapping
+    @Deprecated
     public ResponseEntity<EntityModel<GameResponse>> createGame(@Valid @RequestBody CreateGameRequest request) {
         try {
             GameResponse game = gameService.createGame(request);
@@ -139,12 +141,13 @@ public class GameController {
         }
     }
     
-    @Operation(summary = "Disminuir stock de un juego", description = "Disminuye el stock disponible de un juego por una cantidad específica")
+    @Operation(summary = "Disminuir stock de un juego", description = "[DEPRECATED] Usar /api/admin/games/{id}/decrease-stock. Disminuye el stock disponible de un juego por una cantidad específica (solo administradores)")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "Stock disminuido exitosamente"),
         @ApiResponse(responseCode = "400", description = "Stock insuficiente o datos inválidos")
     })
     @PostMapping("/{id}/decrease-stock")
+    @Deprecated
     public ResponseEntity<EntityModel<GameResponse>> decreaseStock(
             @PathVariable Long id,
             @RequestBody Map<String, Integer> request) {
@@ -162,7 +165,7 @@ public class GameController {
         }
     }
     
-    @Operation(summary = "Actualizar juego completo", description = "Actualiza los datos de un juego existente (solo administradores)")
+    @Operation(summary = "Actualizar juego completo", description = "[DEPRECATED] Usar /api/admin/games/{id}. Actualiza los datos de un juego existente (solo administradores)")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "Juego actualizado exitosamente",
                 content = @Content(schema = @Schema(implementation = GameResponse.class))),
@@ -170,6 +173,7 @@ public class GameController {
         @ApiResponse(responseCode = "404", description = "Juego no encontrado")
     })
     @PutMapping("/{id}")
+    @Deprecated
     public ResponseEntity<EntityModel<GameResponse>> updateGame(
             @PathVariable Long id,
             @Valid @RequestBody UpdateGameRequest request) {
@@ -187,23 +191,28 @@ public class GameController {
         }
     }
     
-    @Operation(summary = "Eliminar juego", description = "Elimina un juego del catálogo (solo administradores)")
+    @Operation(summary = "Eliminar juego", description = "[DEPRECATED] Usar /api/admin/games/{id}. Elimina un juego del catálogo permanentemente (solo administradores)")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "Juego eliminado exitosamente"),
-        @ApiResponse(responseCode = "404", description = "Juego no encontrado")
+        @ApiResponse(responseCode = "404", description = "Juego no encontrado"),
+        @ApiResponse(responseCode = "403", description = "No autorizado - Se requiere rol de administrador")
     })
     @DeleteMapping("/{id}")
+    @Deprecated
     public ResponseEntity<EntityModel<Map<String, String>>> deleteGame(@PathVariable Long id) {
         try {
             gameService.deleteGame(id);
-            Map<String, String> response = Map.of("message", "Juego eliminado exitosamente");
+            Map<String, String> response = Map.of(
+                "message", "Juego eliminado exitosamente",
+                "id", id.toString()
+            );
             EntityModel<Map<String, String>> resource = EntityModel.of(response);
             
             resource.add(linkTo(methodOn(GameController.class).getAllGames(null, null, null, null)).withRel("games"));
             
             return ResponseEntity.ok(resource);
         } catch (RuntimeException e) {
-            throw new RuntimeException(e.getMessage());
+            return ResponseEntity.notFound().build();
         }
     }
 }

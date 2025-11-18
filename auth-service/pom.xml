@@ -77,6 +77,12 @@
             <artifactId>spring-boot-starter-hateoas</artifactId>
         </dependency>
         
+        <!-- WebClient para comunicación entre microservicios -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-webflux</artifactId>
+        </dependency>
+        
         <!-- Swagger/OpenAPI -->
         <dependency>
             <groupId>org.springdoc</groupId>
