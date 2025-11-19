@@ -3,6 +3,10 @@ echo ========================================
 echo   Ejecutando Todos los Microservicios
 echo ========================================
 echo.
+
+REM Cambiar al directorio del script
+cd /d "%~dp0"
+
 echo Este script ejecutara los 4 microservicios en ventanas separadas
 echo.
 echo IMPORTANTE: Asegurate de que:
@@ -28,23 +32,23 @@ echo Iniciando microservicios en ventanas separadas...
 echo.
 
 REM Iniciar Auth Service en nueva ventana
-start "Auth Service (3001)" cmd /k "cd auth-service && mvn spring-boot:run"
+start "Auth Service (3001)" cmd /k "cd /d %~dp0auth-service && mvn spring-boot:run"
 
 REM Esperar un poco antes de iniciar el siguiente
 timeout /t 3 /nobreak >nul
 
 REM Iniciar Game Catalog Service en nueva ventana
-start "Game Catalog Service (3002)" cmd /k "cd game-catalog-service && mvn spring-boot:run"
+start "Game Catalog Service (3002)" cmd /k "cd /d %~dp0game-catalog-service && mvn spring-boot:run"
 
 timeout /t 3 /nobreak >nul
 
 REM Iniciar Order Service en nueva ventana
-start "Order Service (3003)" cmd /k "cd order-service && mvn spring-boot:run"
+start "Order Service (3003)" cmd /k "cd /d %~dp0order-service && mvn spring-boot:run"
 
 timeout /t 3 /nobreak >nul
 
 REM Iniciar Library Service en nueva ventana
-start "Library Service (3004)" cmd /k "cd library-service && mvn spring-boot:run"
+start "Library Service (3004)" cmd /k "cd /d %~dp0library-service && mvn spring-boot:run"
 
 echo.
 echo ========================================
