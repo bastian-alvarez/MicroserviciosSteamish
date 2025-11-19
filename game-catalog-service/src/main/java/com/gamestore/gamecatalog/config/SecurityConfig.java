@@ -30,7 +30,8 @@ public class SecurityConfig {
                     "/v3/api-docs/**",
                     "/api-docs/**",
                     "/swagger-resources/**",
-                    "/webjars/**"
+                    "/webjars/**",
+                    "/api/files/**"
                 ).permitAll()
                 // GET endpoints públicos (lectura)
                 .requestMatchers("GET", "/api/games", "/api/games/{id}", "/api/categories", "/api/genres").permitAll()

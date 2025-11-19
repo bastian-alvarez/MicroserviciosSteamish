@@ -37,7 +37,8 @@ public class SecurityConfig {
                     "/v3/api-docs/**",
                     "/api-docs/**",
                     "/swagger-resources/**",
-                    "/webjars/**"
+                    "/webjars/**",
+                    "/api/files/**"
                 ).permitAll()
                 // Endpoints de administrador
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")

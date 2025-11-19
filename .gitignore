@@ -49,3 +49,7 @@ logs/
 application-local.properties
 application-dev.properties
 
+# Uploaded files
+uploads/
+**/uploads/
+

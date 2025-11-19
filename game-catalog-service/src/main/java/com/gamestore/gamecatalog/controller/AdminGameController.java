@@ -3,6 +3,7 @@ package com.gamestore.gamecatalog.controller;
 import com.gamestore.gamecatalog.dto.CreateGameRequest;
 import com.gamestore.gamecatalog.dto.GameResponse;
 import com.gamestore.gamecatalog.dto.UpdateGameRequest;
+import com.gamestore.gamecatalog.service.FileStorageService;
 import com.gamestore.gamecatalog.service.GameService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -13,8 +14,10 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.hateoas.EntityModel;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.Map;
 
@@ -28,6 +31,7 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
 @Tag(name = "Administración de Juegos", description = "API para gestión de juegos (solo administradores)")
 public class AdminGameController {
     private final GameService gameService;
+    private final FileStorageService fileStorageService;
     
     @Operation(summary = "Crear nuevo juego", description = "Crea un nuevo juego en el catálogo con los datos proporcionados (solo administradores)")
     @ApiResponses(value = {
@@ -167,6 +171,54 @@ public class AdminGameController {
             return ResponseEntity.ok(resource);
         } catch (RuntimeException e) {
             throw new RuntimeException(e.getMessage());
+        }
+    }
+    
+    @Operation(summary = "Subir imagen de juego", description = "Sube una imagen directamente para un juego específico. Formatos aceptados: JPG, PNG, GIF. Tamaño máximo: 10MB. Solo administradores")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Imagen subida exitosamente",
+                content = @Content(schema = @Schema(implementation = GameResponse.class))),
+        @ApiResponse(responseCode = "400", description = "Archivo inválido o demasiado grande"),
+        @ApiResponse(responseCode = "404", description = "Juego no encontrado"),
+        @ApiResponse(responseCode = "403", description = "No autorizado - Se requiere rol de administrador")
+    })
+    @PostMapping(value = "/{id}/image/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<EntityModel<GameResponse>> uploadGameImage(
+            @PathVariable Long id,
+            @RequestParam("file") MultipartFile file) {
+        try {
+            // Verificar que el juego existe
+            GameResponse currentGame = gameService.getGameById(id);
+            String oldImageUrl = currentGame.getImagenUrl();
+            
+            // Guardar el nuevo archivo
+            String imageUrl = fileStorageService.storeGameImage(file, id);
+            
+            // Actualizar el juego con la nueva URL de imagen
+            UpdateGameRequest updateRequest = new UpdateGameRequest();
+            updateRequest.setImagenUrl(imageUrl);
+            GameResponse updatedGame = gameService.updateGame(id, updateRequest);
+            
+            // Eliminar imagen anterior si existe
+            if (oldImageUrl != null && !oldImageUrl.isEmpty()) {
+                String oldFilename = fileStorageService.extractFilenameFromUrl(oldImageUrl);
+                if (oldFilename != null) {
+                    fileStorageService.deleteGameImage(oldFilename);
+                }
+            }
+            
+            EntityModel<GameResponse> resource = EntityModel.of(updatedGame);
+            resource.add(linkTo(methodOn(AdminGameController.class).uploadGameImage(id, file)).withSelfRel());
+            resource.add(linkTo(methodOn(AdminGameController.class).getGameById(id)).withRel("game"));
+            resource.add(linkTo(methodOn(AdminGameController.class).updateGame(id, new UpdateGameRequest())).withRel("update"));
+            
+            return ResponseEntity.ok(resource);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        } catch (Exception e) {
+            throw new RuntimeException("Error al subir la imagen: " + e.getMessage());
         }
     }
 }
