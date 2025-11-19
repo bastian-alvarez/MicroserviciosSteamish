@@ -146,6 +146,21 @@ public class AuthService {
         return mapToUserResponse(user);
     }
     
+    @Transactional
+    public UserResponse updateProfilePhoto(Long userId, String profilePhotoUri) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+        user.setProfilePhotoUri(profilePhotoUri);
+        user = userRepository.save(user);
+        return mapToUserResponse(user);
+    }
+    
+    public UserResponse getCurrentUser(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+        return mapToUserResponse(user);
+    }
+    
     private UserResponse mapToUserResponse(User user) {
         return new UserResponse(
             user.getId(),

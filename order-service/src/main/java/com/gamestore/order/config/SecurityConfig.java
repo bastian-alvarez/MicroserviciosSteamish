@@ -32,13 +32,14 @@ public class SecurityConfig {
                     "/swagger-resources/**",
                     "/webjars/**"
                 ).permitAll()
-                // GET endpoints públicos (lectura de órdenes propias)
-                .requestMatchers("GET", "/api/orders/user/**").permitAll()
                 // Endpoints de administrador (ver todas las órdenes)
                 .requestMatchers("GET", "/api/orders").hasRole("ADMIN")
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
-                // Crear órdenes requiere autenticación (pero no necesariamente admin)
-                .requestMatchers("POST", "/api/orders").permitAll()
+                // Crear órdenes requiere autenticación (cualquier usuario autenticado)
+                .requestMatchers("POST", "/api/orders").authenticated()
+                // Ver órdenes propias requiere autenticación
+                .requestMatchers("GET", "/api/orders/user/**").authenticated()
+                .requestMatchers("GET", "/api/orders/{id}").authenticated()
                 .anyRequest().authenticated()
             )
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);

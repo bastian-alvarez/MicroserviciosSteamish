@@ -41,6 +41,8 @@ public class SecurityConfig {
                 ).permitAll()
                 // Endpoints de administrador
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                // Endpoints de perfil de usuario (requieren autenticación)
+                .requestMatchers("/api/users/me/**").authenticated()
                 .anyRequest().authenticated()
             )
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);

@@ -40,7 +40,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 Boolean isAdmin = jwtUtil.isAdmin(token);
                 
                 if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-                    String role = isAdmin != null && isAdmin ? "ROLE_ADMIN" : "ROLE_USER";
+                    // Siempre asignar un rol: ADMIN si isAdmin es true, USER en cualquier otro caso
+                    String role = (isAdmin != null && isAdmin) ? "ROLE_ADMIN" : "ROLE_USER";
                     
                     UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
                         email,
@@ -52,7 +53,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 }
             }
         } catch (Exception e) {
-            // Token inválido, continuar sin autenticación
+            // Token inválido o expirado, continuar sin autenticación
+            // Esto permitirá que Spring Security maneje la autorización
         }
         
         filterChain.doFilter(request, response);
