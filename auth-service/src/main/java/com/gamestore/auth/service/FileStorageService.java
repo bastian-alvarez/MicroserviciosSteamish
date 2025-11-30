@@ -30,21 +30,28 @@ public class FileStorageService {
      * @throws IOException Si hay error al guardar el archivo
      */
     public String storeProfilePhoto(MultipartFile file, Long userId) throws IOException {
+        log.info("Intentando guardar foto de perfil para usuario {}: nombre={}, tamaño={}, contentType={}", 
+            userId, file.getOriginalFilename(), file.getSize(), file.getContentType());
+        
         // Validar que el archivo no esté vacío
         if (file.isEmpty()) {
+            log.warn("Archivo vacío recibido para usuario {}", userId);
             throw new IllegalArgumentException("El archivo está vacío");
         }
         
         // Validar tipo de archivo (solo imágenes)
         String contentType = file.getContentType();
         if (contentType == null || !contentType.startsWith("image/")) {
-            throw new IllegalArgumentException("El archivo debe ser una imagen");
+            log.warn("Tipo de archivo inválido para usuario {}: contentType={}", userId, contentType);
+            throw new IllegalArgumentException("El archivo debe ser una imagen. Tipo recibido: " + contentType);
         }
         
         // Validar tamaño (máximo 5MB)
         long maxSize = 5 * 1024 * 1024; // 5MB
         if (file.getSize() > maxSize) {
-            throw new IllegalArgumentException("El archivo es demasiado grande. Máximo 5MB");
+            log.warn("Archivo demasiado grande para usuario {}: tamaño={} bytes, máximo={} bytes", 
+                userId, file.getSize(), maxSize);
+            throw new IllegalArgumentException("El archivo es demasiado grande. Máximo 5MB. Tamaño recibido: " + (file.getSize() / 1024 / 1024) + "MB");
         }
         
         // Crear directorio si no existe

@@ -5,8 +5,10 @@ import com.gamestore.library.dto.LibraryItemResponse;
 import com.gamestore.library.entity.LibraryItem;
 import com.gamestore.library.repository.LibraryRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -22,7 +24,7 @@ public class LibraryService {
     public LibraryItemResponse addToLibrary(AddToLibraryRequest request) {
         // Verificar si ya existe
         if (libraryRepository.existsByUserIdAndJuegoId(request.getUserId(), request.getJuegoId())) {
-            throw new RuntimeException("El juego ya está en la biblioteca");
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "El juego ya está en la biblioteca");
         }
         
         LibraryItem item = new LibraryItem();
@@ -30,9 +32,10 @@ public class LibraryService {
         item.setJuegoId(request.getJuegoId());
         item.setName(request.getName());
         item.setPrice(request.getPrice());
-        item.setDateAdded(LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE));
-        item.setStatus(request.getStatus());
-        item.setGenre(request.getGenre());
+        // Formato de fecha compatible con TIMESTAMP de MySQL: YYYY-MM-DD HH:mm:ss
+        item.setDateAdded(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+        item.setStatus(request.getStatus() != null ? request.getStatus() : "Disponible");
+        item.setGenre(request.getGenre() != null ? request.getGenre() : "Acción");
         
         item = libraryRepository.save(item);
         return mapToResponse(item);

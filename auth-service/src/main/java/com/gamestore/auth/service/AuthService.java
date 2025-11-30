@@ -7,7 +7,7 @@ import com.gamestore.auth.repository.AdminRepository;
 import com.gamestore.auth.repository.UserRepository;
 import com.gamestore.auth.util.JwtUtil;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.crypto.password.PasswordEncoder;
+import org.mindrot.jbcrypt.BCrypt;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,7 +19,6 @@ import java.util.Optional;
 public class AuthService {
     private final UserRepository userRepository;
     private final AdminRepository adminRepository;
-    private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
     
     @Transactional
@@ -32,13 +31,13 @@ public class AuthService {
         user.setName(request.getName());
         user.setEmail(request.getEmail());
         user.setPhone(request.getPhone());
-        user.setPassword(passwordEncoder.encode(request.getPassword()));
+        user.setPassword(BCrypt.hashpw(request.getPassword(), BCrypt.gensalt(10)));
         user.setGender(request.getGender());
         user.setIsBlocked(false);
         
         user = userRepository.save(user);
         
-        String token = jwtUtil.generateToken(user.getEmail(), user.getId(), false);
+        String token = jwtUtil.generateToken(user.getEmail(), user.getId(), false, false);
         
         UserResponse userResponse = mapToUserResponse(user);
         return new AuthResponse(userResponse, token, "Bearer", jwtUtil.getExpirationTime());
@@ -49,8 +48,13 @@ public class AuthService {
         Optional<Admin> adminOpt = adminRepository.findByEmail(request.getEmail());
         if (adminOpt.isPresent()) {
             Admin admin = adminOpt.get();
-            if (passwordEncoder.matches(request.getPassword(), admin.getPassword())) {
-                String token = jwtUtil.generateToken(admin.getEmail(), admin.getId(), true);
+            if (BCrypt.checkpw(request.getPassword(), admin.getPassword())) {
+                // Determinar si es admin o moderador
+                boolean isAdmin = admin.getRole() == Admin.AdminRole.SUPER_ADMIN || 
+                                 admin.getRole() == Admin.AdminRole.GAME_MANAGER;
+                boolean isModerator = admin.getRole() == Admin.AdminRole.MODERATOR;
+                
+                String token = jwtUtil.generateToken(admin.getEmail(), admin.getId(), isAdmin, isModerator);
                 UserResponse userResponse = new UserResponse(
                     admin.getId(),
                     admin.getName(),
@@ -69,16 +73,16 @@ public class AuthService {
         if (userOpt.isPresent()) {
             User user = userOpt.get();
             if (user.getIsBlocked()) {
-                throw new RuntimeException("Tu cuenta ha sido bloqueada. Contacta al administrador.");
+                throw new RuntimeException("BLOQUEADA");
             }
-            if (passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-                String token = jwtUtil.generateToken(user.getEmail(), user.getId(), false);
+            if (BCrypt.checkpw(request.getPassword(), user.getPassword())) {
+                String token = jwtUtil.generateToken(user.getEmail(), user.getId(), false, false);
                 UserResponse userResponse = mapToUserResponse(user);
                 return new AuthResponse(userResponse, token, "Bearer", jwtUtil.getExpirationTime());
             }
         }
         
-        throw new RuntimeException("Credenciales inválidas");
+        throw new RuntimeException("CREDENCIALES_INVALIDAS");
     }
     
     public List<UserResponse> getAllUsers() {
@@ -155,10 +159,48 @@ public class AuthService {
         return mapToUserResponse(user);
     }
     
+    @Transactional
+    public void changePassword(Long userId, String currentPassword, String newPassword) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+        
+        // Verificar que la contraseña actual sea correcta
+        if (!BCrypt.checkpw(currentPassword, user.getPassword())) {
+            throw new RuntimeException("CONTRASENA_ACTUAL_INCORRECTA");
+        }
+        
+        // Validar que la nueva contraseña sea diferente
+        if (BCrypt.checkpw(newPassword, user.getPassword())) {
+            throw new RuntimeException("La nueva contraseña debe ser diferente a la actual");
+        }
+        
+        // Hashear y guardar la nueva contraseña
+        user.setPassword(BCrypt.hashpw(newPassword, BCrypt.gensalt(10)));
+        userRepository.save(user);
+    }
+    
     public UserResponse getCurrentUser(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
         return mapToUserResponse(user);
+    }
+    
+    public Long getUserIdByEmail(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+        return user.getId();
+    }
+    
+    public List<AdminResponse> getAllAdmins() {
+        return adminRepository.findAll().stream()
+                .map(this::mapToAdminResponse)
+                .collect(java.util.stream.Collectors.toList());
+    }
+    
+    public AdminResponse getAdminById(Long adminId) {
+        Admin admin = adminRepository.findById(adminId)
+                .orElseThrow(() -> new RuntimeException("Administrador no encontrado"));
+        return mapToAdminResponse(admin);
     }
     
     private UserResponse mapToUserResponse(User user) {
@@ -172,5 +214,17 @@ public class AuthService {
             user.getGender()
         );
     }
+    
+    private AdminResponse mapToAdminResponse(Admin admin) {
+        return new AdminResponse(
+            admin.getId(),
+            admin.getName(),
+            admin.getEmail(),
+            admin.getPhone(),
+            admin.getRole().name(),
+            admin.getProfilePhotoUri(),
+            admin.getCreatedAt(),
+            admin.getUpdatedAt()
+        );
+    }
 }
-

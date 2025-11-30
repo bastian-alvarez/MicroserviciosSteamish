@@ -3,7 +3,10 @@ package com.gamestore.gamecatalog.controller;
 import com.gamestore.gamecatalog.entity.Category;
 import com.gamestore.gamecatalog.repository.CategoryRepository;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.hateoas.CollectionModel;
@@ -25,8 +28,23 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
 public class CategoryController {
     private final CategoryRepository categoryRepository;
     
-    @Operation(summary = "Listar todas las categorías", description = "Obtiene la lista completa de categorías disponibles")
-    @ApiResponse(responseCode = "200", description = "Lista de categorías obtenida exitosamente")
+    @Operation(
+        summary = "Listar todas las categorías", 
+        description = "Obtiene la lista completa de categorías disponibles en el catálogo. Las categorías " +
+                      "se utilizan para organizar y filtrar los juegos (ej: Acción, Aventura, RPG, etc.)."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "200", 
+            description = "Lista de categorías obtenida exitosamente. Retorna lista vacía si no hay categorías.",
+            content = @Content(schema = @Schema(implementation = CollectionModel.class))
+        ),
+        @ApiResponse(
+            responseCode = "500", 
+            description = "Error interno del servidor al obtener las categorías",
+            content = @Content(schema = @Schema(example = "{\"error\": \"Error al obtener las categorías\"}"))
+        )
+    })
     @GetMapping
     public ResponseEntity<CollectionModel<EntityModel<Category>>> getAllCategories() {
         List<Category> categories = categoryRepository.findAll();

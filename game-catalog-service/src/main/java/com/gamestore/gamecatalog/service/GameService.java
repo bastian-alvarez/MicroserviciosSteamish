@@ -14,6 +14,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class GameService {
     private final GameRepository gameRepository;
+    private final com.gamestore.gamecatalog.service.RatingService ratingService;
     
     public List<GameResponse> getAllGames() {
         return gameRepository.findByActivoTrue().stream()
@@ -163,6 +164,10 @@ public class GameService {
         if (game.getGenero() != null) {
             response.setGeneroNombre(game.getGenero().getNombre());
         }
+        
+        // Incluir información de calificaciones
+        response.setAverageRating(ratingService.getAverageRating(game.getId()));
+        response.setRatingCount(ratingService.getRatingCount(game.getId()));
         
         return response;
     }

@@ -4,10 +4,11 @@ Arquitectura de microservicios para la aplicación GameStore usando Java Spring 
 
 ## 📦 Microservicios
 
-1. **auth-service** (Puerto 3001) - Autenticación y gestión de usuarios/administradores
-2. **game-catalog-service** (Puerto 3002) - Catálogo de juegos, categorías y géneros
-3. **order-service** (Puerto 3003) - Compras, carrito y órdenes
-4. **library-service** (Puerto 3004) - Biblioteca de juegos del usuario
+1. **eureka-server** (Puerto 8761) - Servidor de descubrimiento de servicios
+2. **auth-service** (Puerto 3001) - Autenticación y gestión de usuarios/administradores
+3. **game-catalog-service** (Puerto 3002) - Catálogo de juegos, categorías y géneros
+4. **order-service** (Puerto 3003) - Compras, carrito y órdenes
+5. **library-service** (Puerto 3004) - Biblioteca de juegos del usuario
 
 ## 🚀 Inicio Rápido
 
@@ -59,9 +60,24 @@ spring.datasource.password=tu_password_mysql
 - `order-service/src/main/resources/application.properties`
 - `library-service/src/main/resources/application.properties`
 
-### 3. Compilar y ejecutar los servicios
+### 3. ⚠️ ORDEN DE INICIO COMPLETO DEL SISTEMA
+
+**El orden es crítico para que todo funcione correctamente:**
+
+1. ✅ **MySQL** → Base de datos corriendo (verifica en Laragon/XAMPP)
+2. ✅ **Eureka Server** → Debe iniciarse PRIMERO (puerto 8761)
+3. ✅ **Microservicios** → Se registran automáticamente en Eureka
+4. ✅ **React App** → Se conecta a los microservicios por puerto directo
+
+**📖 Guía detallada:** Ver [GUIA_INICIO_COMPLETO.md](GUIA_INICIO_COMPLETO.md)
+
+**🚀 Script automático:** Ejecuta `iniciar-todo.bat` para iniciar todo automáticamente
+
+### 4. Compilar y ejecutar los servicios
 
 El proyecto tiene un **POM padre** que gestiona todos los microservicios como módulos Maven.
+
+**⚠️ IMPORTANTE:** Eureka Server debe iniciarse primero antes que los otros microservicios. Si ya lo iniciaste en el paso 2, puedes continuar con los microservicios.
 
 #### Opción A: Compilar todos los servicios desde la raíz
 
@@ -73,6 +89,19 @@ mvn clean install
 Esto compilará todos los microservicios en un solo comando.
 
 #### Opción B: Ejecutar cada servicio individualmente
+
+**Eureka Server (Puerto 8761) - ⚠️ DEBE INICIARSE PRIMERO**
+```bash
+cd eureka-server
+mvn spring-boot:run
+```
+
+O desde la raíz:
+```bash
+mvn spring-boot:run -pl eureka-server
+```
+
+Luego iniciar los demás servicios:
 
 **Auth Service (Puerto 3001)**
 ```bash
@@ -101,6 +130,9 @@ mvn spring-boot:run
 #### Opción C: Ejecutar un servicio específico desde la raíz
 
 ```bash
+# Ejecutar eureka-server (PRIMERO)
+mvn spring-boot:run -pl eureka-server
+
 # Ejecutar auth-service
 mvn spring-boot:run -pl auth-service
 
@@ -143,7 +175,11 @@ mvn spring-boot:run -pl library-service
 ## 🔗 Comunicación entre Servicios
 
 - **Order Service** → **Game Catalog Service**: Obtiene precios y actualiza stock
-- Todos los servicios pueden comunicarse vía HTTP REST
+- **Order Service** → **Library Service**: Agrega juegos a la biblioteca del usuario
+- **Auth Service** → **Game Catalog Service**: Operaciones administrativas de juegos
+- **Game Catalog Service** → **Auth Service**: Validación de usuarios y moderadores
+- Todos los servicios se comunican vía **Eureka Service Discovery** (sin URLs hardcodeadas)
+- Los servicios usan **WebClient con LoadBalancer** para descubrir servicios automáticamente
 
 ## 🗄️ Bases de Datos
 
@@ -154,18 +190,25 @@ mvn spring-boot:run -pl library-service
 
 ## 📝 Notas
 
+- **Eureka Server debe iniciarse primero** antes que los otros microservicios
 - Cada servicio es independiente y puede ejecutarse por separado
+- Los servicios se registran automáticamente en Eureka al iniciar
 - Los servicios usan CORS habilitado para desarrollo
 - JWT se usa para autenticación (configurar secret en auth-service)
-- Los servicios se comunican vía WebClient (Spring WebFlux)
+- Los servicios se comunican vía WebClient con LoadBalancer (descubrimiento automático)
+- **Ya no se usan URLs hardcodeadas** - los servicios se descubren por nombre
+- Dashboard de Eureka disponible en: http://localhost:8761
 
 ## 🛠️ Tecnologías
 
 - Spring Boot 3.1.5
+- Spring Cloud 2022.0.4
+- Spring Cloud Netflix Eureka (Service Discovery)
 - Spring Data JPA
 - MySQL 8
 - Lombok
 - Spring WebFlux (para comunicación entre servicios)
+- Spring Cloud LoadBalancer (para balanceo de carga)
 
 ## 📚 Documentación
 
@@ -176,5 +219,37 @@ mvn spring-boot:run -pl library-service
 
 ## 🚀 Scripts Útiles
 
+- **`iniciar-todo.bat`** - ⭐ Script automático para iniciar todo el sistema (Eureka + Microservicios + React)
+- **`verificar-servicios.bat`** - 🔍 Verifica qué servicios están corriendo y cuáles faltan
 - **`ejecutar-servicios.bat`** - Script interactivo para ejecutar los servicios en Windows
 - **`verificar-conexion.bat`** - Verifica la conexión a MySQL antes de iniciar los servicios
+
+## 🔍 Solución de Problemas
+
+Si ves el error **"Failed to fetch"** o **"Error al obtener los juegos"**:
+
+1. **Ejecuta el script de verificación:**
+   ```bash
+   .\verificar-servicios.bat
+   ```
+
+2. **Sigue la guía completa:** Ver [VERIFICAR_CONEXION.md](VERIFICAR_CONEXION.md)
+
+3. **Verifica el orden de inicio:**
+   - Eureka Server debe iniciarse PRIMERO
+   - Luego los microservicios
+   - Finalmente la aplicación React
+
+## 🌐 Iniciar la Aplicación Web React
+
+Una vez que todos los microservicios estén corriendo:
+
+```bash
+# Desde la carpeta steamish-react-app (en la raíz del proyecto)
+cd ../steamish-react-app
+npm start
+```
+
+La aplicación se abrirá automáticamente en: http://localhost:3000
+
+**Nota:** La aplicación React se conecta directamente a los microservicios por puerto (3001, 3002, 3003, 3004). Eureka solo se usa para la comunicación entre microservicios.

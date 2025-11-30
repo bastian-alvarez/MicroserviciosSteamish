@@ -2,8 +2,6 @@ package com.gamestore.auth.service;
 
 import com.gamestore.auth.dto.GameRequest;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
@@ -16,12 +14,12 @@ import java.util.Map;
 public class GameCatalogService {
     private final WebClient.Builder webClientBuilder;
     
-    @Value("${game.catalog.service.url:http://localhost:3002}")
-    private String gameCatalogServiceUrl;
+    // Usando Eureka para descubrimiento de servicios
+    private static final String GAME_CATALOG_SERVICE = "http://game-catalog-service";
     
     private WebClient getWebClient(String token) {
         return webClientBuilder
-                .baseUrl(gameCatalogServiceUrl)
+                .baseUrl(GAME_CATALOG_SERVICE)
                 .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
                 .defaultHeader(HttpHeaders.AUTHORIZATION, "Bearer " + token)
                 .build();
