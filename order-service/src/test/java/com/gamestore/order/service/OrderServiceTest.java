@@ -13,7 +13,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import java.util.Arrays;
@@ -45,9 +44,7 @@ class OrderServiceTest {
 
     @BeforeEach
     void setUp() {
-        // Configurar URLs de servicios
-        ReflectionTestUtils.setField(orderService, "libraryServiceUrl", "http://localhost:3004");
-        ReflectionTestUtils.setField(orderService, "gameCatalogServiceUrl", "http://localhost:3002");
+        // Las URLs de servicios son constantes estáticas finales, no necesitan ser configuradas
 
         createRequest = new CreateOrderRequest();
         createRequest.setUserId(1L);

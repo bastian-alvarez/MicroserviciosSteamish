@@ -25,8 +25,9 @@ public class OrderService {
     private final WebClient.Builder webClientBuilder;
     
     // URLs de servicios - Eureka resolverá automáticamente, pero tenemos fallback directo
-    private static final String LIBRARY_SERVICE_EUREKA = "http://library-service";
-    private static final String GAME_CATALOG_SERVICE_EUREKA = "http://game-catalog-service";
+    // IMPORTANTE: Para @LoadBalanced, usar solo el nombre del servicio sin http://
+    private static final String LIBRARY_SERVICE_EUREKA = "library-service";
+    private static final String GAME_CATALOG_SERVICE_EUREKA = "game-catalog-service";
     // URLs directas como fallback si Eureka no está disponible
     private static final String LIBRARY_SERVICE_DIRECT = "http://localhost:3004";
     private static final String GAME_CATALOG_SERVICE_DIRECT = "http://localhost:3002";
@@ -153,15 +154,22 @@ public class OrderService {
     }
     
     private GameResponse getGameInfo(Long juegoId) {
-        // Intentar primero con Eureka, luego con URL directa como fallback
-        String[] urls = {GAME_CATALOG_SERVICE_EUREKA, GAME_CATALOG_SERVICE_DIRECT};
+        // Intentar primero con URL directa (más confiable), luego con Eureka como alternativa
+        // Esto evita problemas con LoadBalancer cuando Eureka no está completamente configurado
+        String[] urls = {GAME_CATALOG_SERVICE_DIRECT, GAME_CATALOG_SERVICE_EUREKA};
         
         for (String baseUrl : urls) {
             try {
+                boolean isEureka = !baseUrl.contains("localhost");
                 log.info("Obteniendo información del juego {} desde {} (intento con {})", juegoId, baseUrl, 
-                        baseUrl.contains("localhost") ? "URL directa" : "Eureka");
+                        isEureka ? "Eureka" : "URL directa");
                 
-                WebClient webClient = webClientBuilder.baseUrl(baseUrl).build();
+                // Para Eureka con @LoadBalanced, usar http://service-name (el LoadBalancer resolverá el nombre)
+                // Para URL directa, usar la URL completa sin LoadBalancer
+                WebClient webClient = isEureka 
+                    ? webClientBuilder.baseUrl("http://" + baseUrl).build()
+                    : WebClient.builder().baseUrl(baseUrl).build();
+                
                 GameResponse game = webClient.get()
                         .uri("/api/games/{id}", juegoId)
                         .retrieve()
@@ -175,8 +183,8 @@ public class OrderService {
                 
                 if (game == null) {
                     log.warn("Juego {} no encontrado (respuesta null) desde {}", juegoId, baseUrl);
-                    if (baseUrl.equals(GAME_CATALOG_SERVICE_EUREKA)) {
-                        continue; // Intentar con URL directa
+                    if (baseUrl.equals(GAME_CATALOG_SERVICE_DIRECT)) {
+                        continue; // Intentar con Eureka
                     }
                     throw new RuntimeException("Juego no encontrado con ID: " + juegoId);
                 }
@@ -184,43 +192,40 @@ public class OrderService {
                 log.info("Información del juego {} obtenida exitosamente desde {}", juegoId, baseUrl);
                 return game;
             } catch (org.springframework.web.reactive.function.client.WebClientException e) {
-                log.warn("Error al conectar con {}: {}. {}", baseUrl, e.getMessage(), 
-                        baseUrl.equals(GAME_CATALOG_SERVICE_EUREKA) ? "Intentando con URL directa..." : "");
-                
-                if (baseUrl.equals(GAME_CATALOG_SERVICE_EUREKA)) {
-                    continue; // Intentar con URL directa
-                }
-                
-                // Si falló también con URL directa, lanzar error
                 String errorMsg = e.getMessage();
-                if (errorMsg != null && errorMsg.contains("503")) {
-                    throw new RuntimeException("El servicio de catálogo de juegos no está disponible. " +
-                            "Verifica que 'game-catalog-service' esté corriendo en el puerto 3002.");
-                } else if (errorMsg != null && (errorMsg.contains("UNKNOWN") || errorMsg.contains("LoadBalancer"))) {
-                    throw new RuntimeException("No se pudo resolver el servicio 'game-catalog-service'. " +
-                            "Verifica que: 1) Eureka Server esté corriendo en http://localhost:8761, " +
-                            "2) game-catalog-service esté corriendo en http://localhost:3002, " +
-                            "3) El nombre del servicio sea exactamente 'game-catalog-service'.");
+                log.warn("Error al conectar con {}: {}. {}", baseUrl, errorMsg, 
+                        baseUrl.equals(GAME_CATALOG_SERVICE_DIRECT) ? "Intentando con Eureka..." : "");
+                
+                // Si el error es de LoadBalancer y estamos usando URL directa, ya falló, intentar Eureka
+                if (baseUrl.equals(GAME_CATALOG_SERVICE_DIRECT)) {
+                    continue; // Intentar con Eureka
                 }
-                throw new RuntimeException("Error al conectar con el servicio de catálogo: " + e.getMessage());
+                
+                // Si falló también con Eureka, lanzar error más descriptivo
+                if (errorMsg != null && (errorMsg.contains("UNKNOWN") || errorMsg.contains("LoadBalancer"))) {
+                    throw new RuntimeException("No se pudo resolver el servicio 'game-catalog-service' a través de Eureka. " +
+                            "Usando conexión directa. Verifica que: 1) Eureka Server esté corriendo en http://localhost:8761, " +
+                            "2) game-catalog-service esté corriendo en http://localhost:3002.");
+                }
+                throw new RuntimeException("Error al conectar con el servicio de catálogo: " + errorMsg);
             } catch (RuntimeException e) {
-                // Si es un error de "no encontrado" y estamos usando Eureka, intentar directo
-                if (baseUrl.equals(GAME_CATALOG_SERVICE_EUREKA) && 
+                // Si es un error de "no encontrado" y estamos usando URL directa, intentar Eureka
+                if (baseUrl.equals(GAME_CATALOG_SERVICE_DIRECT) && 
                     (e.getMessage().contains("no encontrado") || e.getMessage().contains("503"))) {
                     continue;
                 }
                 throw e;
             } catch (Exception e) {
                 log.error("Error inesperado al obtener juego {} desde {}: {}", juegoId, baseUrl, e.getMessage(), e);
-                if (baseUrl.equals(GAME_CATALOG_SERVICE_EUREKA)) {
-                    continue; // Intentar con URL directa
+                if (baseUrl.equals(GAME_CATALOG_SERVICE_DIRECT)) {
+                    continue; // Intentar con Eureka
                 }
                 throw new RuntimeException("Error al obtener información del juego " + juegoId + ": " + e.getMessage());
             }
         }
         
         // Si llegamos aquí, ambos intentos fallaron
-        throw new RuntimeException("No se pudo conectar con game-catalog-service ni por Eureka ni por URL directa. " +
+        throw new RuntimeException("No se pudo conectar con game-catalog-service. " +
                 "Verifica que el servicio esté corriendo en http://localhost:3002");
     }
     
@@ -229,11 +234,17 @@ public class OrderService {
     }
     
     private void decreaseGameStock(Long juegoId, Integer quantity) {
-        String[] urls = {GAME_CATALOG_SERVICE_EUREKA, GAME_CATALOG_SERVICE_DIRECT};
+        // Intentar primero con URL directa, luego con Eureka
+        String[] urls = {GAME_CATALOG_SERVICE_DIRECT, GAME_CATALOG_SERVICE_EUREKA};
         
         for (String baseUrl : urls) {
             try {
-                WebClient webClient = webClientBuilder.baseUrl(baseUrl).build();
+                boolean isEureka = !baseUrl.contains("localhost");
+                // Para Eureka con @LoadBalanced, usar http://service-name (el LoadBalancer resolverá el nombre)
+                // Para URL directa, usar la URL completa
+                WebClient webClient = isEureka 
+                    ? webClientBuilder.baseUrl("http://" + baseUrl).build()
+                    : WebClient.builder().baseUrl(baseUrl).build();
                 webClient.post()
                         .uri("/api/games/internal/{id}/decrease-stock", juegoId)
                         .bodyValue(Map.of("quantity", quantity))
@@ -271,28 +282,66 @@ public class OrderService {
             libraryRequest.setGenre(gameInfo.getGeneroNombre() != null ? gameInfo.getGeneroNombre() : "Acción");
             libraryRequest.setStatus("Disponible");
             
+            log.info("Preparando request para agregar juego a biblioteca: userId={}, juegoId={}, name={}, price={}", 
+                    userId, juegoId, libraryRequest.getName(), libraryRequest.getPrice());
+            
             // Llamar al Library Service usando endpoint interno (sin autenticación)
-            // Intentar primero con Eureka, luego con URL directa como fallback
-            String[] urls = {LIBRARY_SERVICE_EUREKA, LIBRARY_SERVICE_DIRECT};
+            // Intentar primero con URL directa, luego con Eureka como alternativa
+            String[] urls = {LIBRARY_SERVICE_DIRECT, LIBRARY_SERVICE_EUREKA};
             
             for (String baseUrl : urls) {
                 try {
-                    WebClient webClient = webClientBuilder.baseUrl(baseUrl).build();
-                    webClient.post()
+                    boolean isEureka = !baseUrl.contains("localhost");
+                    log.info("Intentando agregar juego {} a biblioteca del usuario {} desde {} (método: {})", 
+                            juegoId, userId, baseUrl, isEureka ? "Eureka" : "URL directa");
+                    
+                    // Para Eureka, usar solo el nombre del servicio. Para URL directa, usar la URL completa
+                    WebClient webClient = isEureka 
+                        ? webClientBuilder.baseUrl("http://" + baseUrl).build()
+                        : WebClient.builder().baseUrl(baseUrl).build();
+                    
+                    // Enviar request con Content-Type application/json
+                    var response = webClient.post()
                             .uri("/api/library/internal/add")
+                            .header("Content-Type", "application/json")
                             .bodyValue(libraryRequest)
                             .retrieve()
-                            .bodyToMono(Void.class)
+                            .toEntity(Void.class)
                             .block();
-                    log.info("Juego {} agregado a la biblioteca del usuario {} desde {}", juegoId, userId, baseUrl);
-                    return;
-                } catch (Exception e) {
-                    log.warn("Error al agregar a biblioteca desde {}: {}. {}", baseUrl, e.getMessage(),
-                            baseUrl.equals(LIBRARY_SERVICE_EUREKA) ? "Intentando con URL directa..." : "");
-                    if (baseUrl.equals(LIBRARY_SERVICE_EUREKA)) {
-                        continue; // Intentar con URL directa
+                    
+                    if (response != null && response.getStatusCode().is2xxSuccessful()) {
+                        log.info("Juego {} agregado exitosamente a la biblioteca del usuario {} desde {}", juegoId, userId, baseUrl);
+                        return;
+                    } else {
+                        log.warn("Respuesta no exitosa al agregar juego {} a biblioteca: {}", juegoId, 
+                                response != null ? response.getStatusCode() : "null");
+                        if (baseUrl.equals(LIBRARY_SERVICE_DIRECT)) {
+                            continue; // Intentar con Eureka
+                        }
+                        throw new RuntimeException("Error al agregar juego a biblioteca: respuesta no exitosa");
                     }
-                    throw e; // Si falló también con URL directa, lanzar error
+                } catch (org.springframework.web.reactive.function.client.WebClientResponseException e) {
+                    // Error de respuesta HTTP (4xx, 5xx)
+                    String errorBody = e.getResponseBodyAsString();
+                    log.error("Error HTTP al agregar juego {} a biblioteca desde {}: {} - {}. Body: {}", 
+                            juegoId, baseUrl, e.getStatusCode(), e.getMessage(), errorBody);
+                    
+                    // Si es un error 409 (conflicto - juego ya existe), no es crítico
+                    if (e.getStatusCode().value() == 409) {
+                        log.warn("Juego {} ya está en la biblioteca del usuario {}: {}", juegoId, userId, errorBody);
+                        return; // No es un error crítico, el juego ya está en la biblioteca
+                    }
+                    
+                    if (baseUrl.equals(LIBRARY_SERVICE_DIRECT)) {
+                        continue; // Intentar con Eureka
+                    }
+                    throw new RuntimeException("Error al agregar juego a biblioteca: " + e.getStatusCode() + " - " + errorBody, e);
+                } catch (Exception e) {
+                    log.error("Error inesperado al agregar a biblioteca desde {}: {}", baseUrl, e.getMessage(), e);
+                    if (baseUrl.equals(LIBRARY_SERVICE_DIRECT)) {
+                        continue; // Intentar con Eureka
+                    }
+                    throw new RuntimeException("Error al agregar juego a biblioteca: " + e.getMessage(), e);
                 }
             }
             
