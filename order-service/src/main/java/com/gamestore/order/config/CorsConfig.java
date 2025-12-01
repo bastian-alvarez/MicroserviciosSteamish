@@ -1,6 +1,5 @@
-package com.gamestore.gamecatalog.config;
+package com.gamestore.order.config;
 
-// CORS habilitado para acceso directo desde el frontend
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.cors.CorsConfiguration;
