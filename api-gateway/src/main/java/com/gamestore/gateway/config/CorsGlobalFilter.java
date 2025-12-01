@@ -26,16 +26,24 @@ public class CorsGlobalFilter implements GlobalFilter, Ordered {
         ServerHttpResponse response = exchange.getResponse();
         HttpHeaders headers = response.getHeaders();
 
-        // Agregar headers CORS a todas las respuestas
-        headers.add(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN, "*");
-        headers.add(HttpHeaders.ACCESS_CONTROL_ALLOW_METHODS, "GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD");
-        headers.add(HttpHeaders.ACCESS_CONTROL_ALLOW_HEADERS, "*");
-        headers.add(HttpHeaders.ACCESS_CONTROL_EXPOSE_HEADERS, "Authorization, Content-Type, X-Total-Count");
-        headers.add(HttpHeaders.ACCESS_CONTROL_MAX_AGE, "3600");
+        // Obtener el origen de la petición
+        String origin = request.getHeaders().getFirst(HttpHeaders.ORIGIN);
+        
+        // Si hay un origen, permitirlo específicamente, sino permitir todos
+        if (origin != null && !origin.isEmpty()) {
+            headers.set(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN, origin);
+        } else {
+            headers.set(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN, "*");
+        }
+        
+        headers.set(HttpHeaders.ACCESS_CONTROL_ALLOW_METHODS, "GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD");
+        headers.set(HttpHeaders.ACCESS_CONTROL_ALLOW_HEADERS, "*");
+        headers.set(HttpHeaders.ACCESS_CONTROL_EXPOSE_HEADERS, "Authorization, Content-Type, X-Total-Count");
+        headers.set(HttpHeaders.ACCESS_CONTROL_MAX_AGE, "3600");
+        headers.set(HttpHeaders.ACCESS_CONTROL_ALLOW_CREDENTIALS, "false");
 
         // Manejar preflight requests (OPTIONS)
         if (CorsUtils.isPreFlightRequest(request)) {
-            headers.add(HttpHeaders.ACCESS_CONTROL_ALLOW_CREDENTIALS, "false");
             response.setStatusCode(HttpStatus.OK);
             return response.setComplete();
         }
