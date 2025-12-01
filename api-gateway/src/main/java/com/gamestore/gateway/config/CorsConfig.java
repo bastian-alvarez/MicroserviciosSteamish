@@ -12,6 +12,13 @@ import java.util.List;
 @Configuration
 public class CorsConfig {
     
+    // CorsWebFilter deshabilitado temporalmente
+    // CORS se maneja mediante:
+    // 1. AddResponseHeader filters en las rutas (application.properties)
+    // 2. CorsGlobalFilter (CorsGlobalFilter.java)
+    // Esto evita conflictos entre múltiples filtros CORS
+    
+    /*
     @Bean
     public CorsWebFilter corsWebFilter() {
         CorsConfiguration corsConfiguration = new CorsConfiguration();
@@ -45,5 +52,6 @@ public class CorsConfig {
         
         return new CorsWebFilter(source);
     }
+    */
 }
 
