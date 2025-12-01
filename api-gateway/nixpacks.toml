@@ -1,0 +1,9 @@
+[phases.setup]
+nixPkgs = { maven = "3.9.5", jdk = "17" }
+
+[phases.install]
+cmds = ["mvn clean package -DskipTests"]
+
+[start]
+cmd = "chmod +x start.sh && ./start.sh"
+
