@@ -27,9 +27,9 @@ public class CorsConfig {
         // Headers permitidos
         corsConfiguration.setAllowedHeaders(List.of("*"));
         
-        // Headers expuestos
+        // Headers expuestos (NO incluir Access-Control-Allow-Origin aquí)
         corsConfiguration.setExposedHeaders(Arrays.asList(
-            "Authorization", "Content-Type", "X-Total-Count", "Access-Control-Allow-Origin"
+            "Authorization", "Content-Type", "X-Total-Count"
         ));
         
         // Permitir credenciales (cookies, auth headers)
