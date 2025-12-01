@@ -26,16 +26,19 @@ FROM eclipse-temurin:17-jre-alpine
 
 WORKDIR /app
 
+# Instalar curl para health checks
+RUN apk add --no-cache curl
+
 # Copiar JAR compilado (buscar en ambas ubicaciones posibles)
 COPY --from=build /app/api-gateway/target/api-gateway-*.jar app.jar
 
-# Exponer puerto
+# Exponer puerto (Render usa variable PORT, pero exponemos 8080 como fallback)
 EXPOSE 8080
 
-# Health check (opcional, requiere wget o curl)
-HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider http://localhost:8080/actuator/health || exit 1
+# Health check mejorado
+HEALTHCHECK --interval=10s --timeout=5s --start-period=60s --retries=3 \
+  CMD curl -f http://localhost:${PORT:-8080}/actuator/health || exit 1
 
-# Ejecutar
-ENTRYPOINT ["java", "-jar", "app.jar"]
+# Ejecutar - asegurar que escucha en 0.0.0.0
+ENTRYPOINT ["sh", "-c", "java -Dserver.address=0.0.0.0 -jar app.jar"]
 
