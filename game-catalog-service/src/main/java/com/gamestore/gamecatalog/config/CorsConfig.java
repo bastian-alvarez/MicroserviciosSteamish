@@ -1,5 +1,8 @@
 package com.gamestore.gamecatalog.config;
 
+// CORS deshabilitado - El API Gateway maneja CORS
+// Si necesitas acceso directo al microservicio, descomenta esta configuración
+/*
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.cors.CorsConfiguration;
@@ -34,4 +37,5 @@ public class CorsConfig {
         return new CorsFilter(corsConfigurationSource());
     }
 }
+*/
 
