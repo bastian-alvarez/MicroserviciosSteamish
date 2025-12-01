@@ -1,0 +1,48 @@
+# Configuración para Render.com
+# Este archivo permite desplegar múltiples servicios desde un solo repositorio
+
+services:
+  # API Gateway
+  - type: web
+    name: api-gateway
+    env: docker
+    dockerfilePath: ./api-gateway/Dockerfile
+    dockerContext: .
+    envVars:
+      - key: SERVER_PORT
+        value: 8080
+      - key: SPRING_PROFILES_ACTIVE
+        value: production
+      - key: EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE
+        value: ${EUREKA_SERVER_URL}  # Configurar en Render Dashboard
+    healthCheckPath: /actuator/health
+
+  # Eureka Server (si lo necesitas)
+  - type: web
+    name: eureka-server
+    env: docker
+    dockerfilePath: ./eureka-server/Dockerfile
+    dockerContext: .
+    envVars:
+      - key: SERVER_PORT
+        value: 8761
+      - key: SPRING_PROFILES_ACTIVE
+        value: production
+
+  # Auth Service (ejemplo)
+  - type: web
+    name: auth-service
+    env: docker
+    dockerfilePath: ./auth-service/Dockerfile
+    dockerContext: .
+    envVars:
+      - key: SERVER_PORT
+        value: 3001
+      - key: SPRING_PROFILES_ACTIVE
+        value: production
+      - key: EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE
+        value: ${EUREKA_SERVER_URL}
+
+# Nota: Render permite 1 servicio web gratis
+# Para múltiples servicios, necesitarás el plan de pago o usar múltiples cuentas
+
