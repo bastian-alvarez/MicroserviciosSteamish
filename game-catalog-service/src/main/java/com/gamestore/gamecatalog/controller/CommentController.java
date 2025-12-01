@@ -39,11 +39,15 @@ public class CommentController {
         description = "Obtiene todos los comentarios del sistema. Por defecto solo muestra los comentarios visibles. " +
                       "El parámetro includeHidden permite incluir comentarios ocultos por moderadores."
     )
-    @ApiResponses(value = {
+    @ApiResponses({
         @ApiResponse(
             responseCode = "200", 
-            description = "Lista de comentarios obtenida exitosamente. Retorna lista vacía si no hay comentarios.",
+            description = "Lista de comentarios obtenida exitosamente",
             content = @Content(schema = @Schema(implementation = CollectionModel.class))
+        ),
+        @ApiResponse(
+            responseCode = "204", 
+            description = "No hay comentarios registrados"
         )
     })
     @GetMapping
@@ -73,7 +77,7 @@ public class CommentController {
         description = "Crea un nuevo comentario para un juego. Los comentarios permiten a los usuarios " +
                       "compartir sus opiniones sobre los juegos. Valida que el juego y usuario existan."
     )
-    @ApiResponses(value = {
+    @ApiResponses({
         @ApiResponse(
             responseCode = "200", 
             description = "Comentario creado exitosamente. Retorna el comentario con su ID asignado.",
@@ -112,11 +116,15 @@ public class CommentController {
         description = "Obtiene todos los comentarios visibles de un juego específico. Útil para mostrar los " +
                       "comentarios en la página de detalles del juego."
     )
-    @ApiResponses(value = {
+    @ApiResponses({
         @ApiResponse(
             responseCode = "200", 
-            description = "Lista de comentarios obtenida exitosamente. Retorna lista vacía si no hay comentarios.",
+            description = "Lista de comentarios obtenida exitosamente",
             content = @Content(schema = @Schema(implementation = CollectionModel.class))
+        ),
+        @ApiResponse(
+            responseCode = "204", 
+            description = "No hay comentarios para este juego"
         ),
         @ApiResponse(
             responseCode = "404", 
@@ -152,11 +160,15 @@ public class CommentController {
         description = "Obtiene todos los comentarios publicados por un usuario específico. Útil para mostrar " +
                       "el historial de comentarios de un usuario en su perfil."
     )
-    @ApiResponses(value = {
+    @ApiResponses({
         @ApiResponse(
             responseCode = "200", 
-            description = "Lista de comentarios obtenida exitosamente. Retorna lista vacía si el usuario no tiene comentarios.",
+            description = "Lista de comentarios obtenida exitosamente",
             content = @Content(schema = @Schema(implementation = CollectionModel.class))
+        ),
+        @ApiResponse(
+            responseCode = "204", 
+            description = "El usuario no tiene comentarios"
         ),
         @ApiResponse(
             responseCode = "404", 
@@ -192,7 +204,7 @@ public class CommentController {
         description = "Elimina permanentemente un comentario del sistema. Esta acción no se puede deshacer. " +
                       "Útil para moderación de contenido."
     )
-    @ApiResponses(value = {
+    @ApiResponses({
         @ApiResponse(
             responseCode = "204", 
             description = "Comentario eliminado exitosamente"

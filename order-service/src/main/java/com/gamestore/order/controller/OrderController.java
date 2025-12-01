@@ -37,7 +37,7 @@ public class OrderController {
                       "disminuye el stock de los juegos y agrega los juegos a la biblioteca del usuario. " +
                       "No requiere autenticación JWT."
     )
-    @ApiResponses(value = {
+    @ApiResponses({
         @ApiResponse(
             responseCode = "200", 
             description = "Orden creada exitosamente. Los juegos han sido agregados a la biblioteca del usuario.",
@@ -81,7 +81,7 @@ public class OrderController {
         description = "Obtiene todas las órdenes realizadas por un usuario específico, ordenadas por fecha de creación " +
                       "(más recientes primero). Incluye detalles completos de cada orden."
     )
-    @ApiResponses(value = {
+    @ApiResponses({
         @ApiResponse(
             responseCode = "200", 
             description = "Lista de órdenes obtenida exitosamente. Retorna una lista vacía si el usuario no tiene órdenes.",
@@ -119,7 +119,7 @@ public class OrderController {
         description = "Obtiene los detalles completos de una orden específica, incluyendo todos los juegos comprados, " +
                       "precios, cantidades y estado de la orden."
     )
-    @ApiResponses(value = {
+    @ApiResponses({
         @ApiResponse(
             responseCode = "200", 
             description = "Orden encontrada exitosamente",
@@ -158,7 +158,7 @@ public class OrderController {
         description = "Obtiene todas las órdenes del sistema, ordenadas por fecha de creación. " +
                       "Útil para administradores que necesitan ver todas las transacciones."
     )
-    @ApiResponses(value = {
+    @ApiResponses({
         @ApiResponse(
             responseCode = "200", 
             description = "Lista de todas las órdenes obtenida exitosamente. Retorna lista vacía si no hay órdenes.",

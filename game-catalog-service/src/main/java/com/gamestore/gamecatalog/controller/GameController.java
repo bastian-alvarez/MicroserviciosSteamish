@@ -39,11 +39,15 @@ public class GameController {
                       "juegos con descuento, o realizar búsqueda por nombre. Todos los parámetros son opcionales " +
                       "y pueden combinarse."
     )
-    @ApiResponses(value = {
+    @ApiResponses({
         @ApiResponse(
             responseCode = "200", 
-            description = "Lista de juegos obtenida exitosamente. Retorna lista vacía si no hay juegos que coincidan con los filtros.",
+            description = "Lista de juegos obtenida exitosamente",
             content = @Content(schema = @Schema(implementation = CollectionModel.class))
+        ),
+        @ApiResponse(
+            responseCode = "204", 
+            description = "No hay juegos que coincidan con los filtros"
         ),
         @ApiResponse(
             responseCode = "500", 
@@ -96,7 +100,7 @@ public class GameController {
         description = "Obtiene los detalles completos de un juego específico, incluyendo información de categoría, " +
                       "género, calificaciones promedio y disponibilidad de stock."
     )
-    @ApiResponses(value = {
+    @ApiResponses({
         @ApiResponse(
             responseCode = "200", 
             description = "Juego encontrado exitosamente",

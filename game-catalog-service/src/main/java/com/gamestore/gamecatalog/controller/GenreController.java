@@ -33,11 +33,15 @@ public class GenreController {
         description = "Obtiene la lista completa de géneros disponibles en el catálogo. Los géneros " +
                       "se utilizan para clasificar y filtrar los juegos (ej: RPG, FPS, Estrategia, etc.)."
     )
-    @ApiResponses(value = {
+    @ApiResponses({
         @ApiResponse(
             responseCode = "200", 
-            description = "Lista de géneros obtenida exitosamente. Retorna lista vacía si no hay géneros.",
+            description = "Lista de géneros obtenida exitosamente",
             content = @Content(schema = @Schema(implementation = CollectionModel.class))
+        ),
+        @ApiResponse(
+            responseCode = "204", 
+            description = "No hay géneros registrados"
         ),
         @ApiResponse(
             responseCode = "500", 

@@ -39,7 +39,7 @@ public class LibraryController {
         description = "Agrega un juego a la biblioteca del usuario. Valida que el juego no esté ya en la biblioteca " +
                       "y que el usuario y juego existan. Los juegos se agregan automáticamente cuando se completa una orden."
     )
-    @ApiResponses(value = {
+    @ApiResponses({
         @ApiResponse(
             responseCode = "200", 
             description = "Juego agregado exitosamente a la biblioteca del usuario",
@@ -92,7 +92,7 @@ public class LibraryController {
         description = "Obtiene todos los juegos en la biblioteca de un usuario. Retorna la lista completa de juegos " +
                       "que el usuario ha comprado y agregado a su biblioteca."
     )
-    @ApiResponses(value = {
+    @ApiResponses({
         @ApiResponse(
             responseCode = "200", 
             description = "Biblioteca obtenida exitosamente. Retorna lista vacía si el usuario no tiene juegos.",
@@ -136,7 +136,7 @@ public class LibraryController {
         description = "Verifica si un usuario tiene un juego específico en su biblioteca. Útil para verificar " +
                       "permisos de acceso o mostrar estado de propiedad en la UI."
     )
-    @ApiResponses(value = {
+    @ApiResponses({
         @ApiResponse(
             responseCode = "200", 
             description = "Verificación completada. Retorna true si el usuario posee el juego, false en caso contrario.",
@@ -169,7 +169,7 @@ public class LibraryController {
         description = "Elimina un juego de la biblioteca del usuario. Esta acción no elimina el juego del catálogo, " +
                       "solo lo remueve de la biblioteca personal del usuario."
     )
-    @ApiResponses(value = {
+    @ApiResponses({
         @ApiResponse(
             responseCode = "200", 
             description = "Juego eliminado exitosamente de la biblioteca",
@@ -201,9 +201,10 @@ public class LibraryController {
     }
     
     @Operation(summary = "Agregar juego a la biblioteca (interno)", description = "Endpoint interno para uso entre microservicios. Agrega un juego a la biblioteca del usuario sin requerir autenticación")
-    @ApiResponses(value = {
+    @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Juego agregado exitosamente"),
-        @ApiResponse(responseCode = "400", description = "Datos inválidos o juego ya existe en la biblioteca")
+        @ApiResponse(responseCode = "400", description = "Datos inválidos o juego ya existe en la biblioteca"),
+        @ApiResponse(responseCode = "409", description = "Conflicto: el juego ya existe en la biblioteca del usuario")
     })
     @PostMapping("/internal/add")
     public ResponseEntity<EntityModel<LibraryItemResponse>> addToLibraryInternal(@Valid @RequestBody AddToLibraryRequest request) {

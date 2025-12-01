@@ -36,7 +36,7 @@ public class RatingController {
         description = "Crea o actualiza la calificación de un usuario para un juego. La calificación debe estar " +
                       "entre 1 y 5 estrellas. Si el usuario ya calificó el juego, se actualiza la calificación existente."
     )
-    @ApiResponses(value = {
+    @ApiResponses({
         @ApiResponse(
             responseCode = "200", 
             description = "Calificación guardada exitosamente. Retorna la calificación creada o actualizada.",
@@ -73,7 +73,7 @@ public class RatingController {
         description = "Obtiene la calificación que un usuario específico le dio a un juego. Útil para mostrar " +
                       "la calificación del usuario actual en la UI."
     )
-    @ApiResponses(value = {
+    @ApiResponses({
         @ApiResponse(
             responseCode = "200", 
             description = "Calificación encontrada exitosamente",
@@ -110,7 +110,7 @@ public class RatingController {
         description = "Obtiene el promedio de calificaciones (1-5 estrellas) y el total de calificaciones recibidas " +
                       "por un juego específico. Útil para mostrar la calificación promedio en el catálogo."
     )
-    @ApiResponses(value = {
+    @ApiResponses({
         @ApiResponse(
             responseCode = "200", 
             description = "Información de calificaciones obtenida exitosamente. Si no hay calificaciones, el promedio es null.",

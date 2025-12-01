@@ -33,11 +33,15 @@ public class CategoryController {
         description = "Obtiene la lista completa de categorías disponibles en el catálogo. Las categorías " +
                       "se utilizan para organizar y filtrar los juegos (ej: Acción, Aventura, RPG, etc.)."
     )
-    @ApiResponses(value = {
+    @ApiResponses({
         @ApiResponse(
             responseCode = "200", 
-            description = "Lista de categorías obtenida exitosamente. Retorna lista vacía si no hay categorías.",
+            description = "Lista de categorías obtenida exitosamente",
             content = @Content(schema = @Schema(implementation = CollectionModel.class))
+        ),
+        @ApiResponse(
+            responseCode = "204", 
+            description = "No hay categorías registradas"
         ),
         @ApiResponse(
             responseCode = "500", 
