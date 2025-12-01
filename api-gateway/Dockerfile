@@ -32,13 +32,17 @@ RUN apk add --no-cache curl
 # Copiar JAR compilado (buscar en ambas ubicaciones posibles)
 COPY --from=build /app/api-gateway/target/api-gateway-*.jar app.jar
 
-# Exponer puerto (Render usa variable PORT, pero exponemos 8080 como fallback)
+# Variables de entorno para Render
+ENV PORT=8080
+ENV SERVER_ADDRESS=0.0.0.0
+
+# Exponer puerto
 EXPOSE 8080
 
-# Health check mejorado
-HEALTHCHECK --interval=10s --timeout=5s --start-period=60s --retries=3 \
-  CMD curl -f http://localhost:${PORT:-8080}/actuator/health || exit 1
+# Health check mejorado (más tiempo para iniciar)
+HEALTHCHECK --interval=10s --timeout=5s --start-period=90s --retries=5 \
+  CMD curl -f http://localhost:${PORT}/actuator/health || exit 1
 
-# Ejecutar - asegurar que escucha en 0.0.0.0
-ENTRYPOINT ["sh", "-c", "java -Dserver.address=0.0.0.0 -jar app.jar"]
+# Ejecutar con puerto y dirección explícitos
+ENTRYPOINT ["sh", "-c", "java -Dserver.address=${SERVER_ADDRESS} -Dserver.port=${PORT} -jar app.jar"]
 
