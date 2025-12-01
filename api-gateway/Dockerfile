@@ -1,9 +1,14 @@
 # Dockerfile para API Gateway
 # Compatible con Render, Fly.io, Google Cloud Run, etc.
 # 
+# IMPORTANTE: Este Dockerfile requiere Build Context = . (raíz del repositorio)
+# 
+# Configuración en Render:
+# - Docker Build Context Directory: . (punto)
+# - Dockerfile Path: api-gateway/Dockerfile
+#
 # Uso:
 # - Desde la raíz del proyecto: docker build -f api-gateway/Dockerfile -t api-gateway .
-# - Desde api-gateway/: docker build -t api-gateway .
 
 # Etapa 1: Build
 FROM maven:3.9-eclipse-temurin-17 AS build
