@@ -16,8 +16,9 @@ public class CorsConfig {
     public CorsWebFilter corsWebFilter() {
         CorsConfiguration corsConfiguration = new CorsConfiguration();
         
-        // Permitir todos los orígenes (en producción, especificar dominios específicos)
-        corsConfiguration.setAllowedOrigins(List.of("*"));
+        // Permitir todos los orígenes - usar addAllowedOriginPattern cuando allowCredentials es false
+        // o usar setAllowedOriginPatterns en lugar de setAllowedOrigins
+        corsConfiguration.addAllowedOriginPattern("*");
         
         // Métodos HTTP permitidos
         corsConfiguration.setAllowedMethods(Arrays.asList(
@@ -25,14 +26,14 @@ public class CorsConfig {
         ));
         
         // Headers permitidos
-        corsConfiguration.setAllowedHeaders(List.of("*"));
+        corsConfiguration.addAllowedHeader("*");
         
-        // Headers expuestos (NO incluir Access-Control-Allow-Origin aquí)
+        // Headers expuestos
         corsConfiguration.setExposedHeaders(Arrays.asList(
             "Authorization", "Content-Type", "X-Total-Count"
         ));
         
-        // Permitir credenciales (cookies, auth headers)
+        // NO permitir credenciales cuando se usa * (causa problemas)
         corsConfiguration.setAllowCredentials(false);
         
         // Cache de preflight requests
