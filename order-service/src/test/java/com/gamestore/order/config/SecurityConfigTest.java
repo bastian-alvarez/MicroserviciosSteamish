@@ -11,7 +11,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
 @ActiveProfiles("test")
-class SecurityConfigTest {
+class CorsConfigTest {
 
     @Autowired(required = false)
     private CorsConfigurationSource corsConfigurationSource;
