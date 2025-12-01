@@ -61,9 +61,9 @@ public class CorsHeaderFilter implements GlobalFilter, Ordered {
     @Override
     public int getOrder() {
         // Ejecutar DESPUÉS de recibir la respuesta del downstream service
-        // pero ANTES del CorsWebFilter (que tiene orden -1 por defecto)
-        // Usar un orden más bajo (mayor número) para ejecutarse después
-        return -50;
+        // pero ANTES de que se agreguen los headers CORS del CorsGlobalFilter
+        // Usar un orden que esté después del CorsGlobalFilter pero antes de la respuesta final
+        return -500;
     }
 }
 
