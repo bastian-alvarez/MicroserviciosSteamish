@@ -5,5 +5,5 @@ nixPkgs = { maven = "3.9.5", jdk = "17" }
 cmds = ["mvn clean package -DskipTests"]
 
 [start]
-cmd = "chmod +x start.sh && ./start.sh"
+cmd = "chmod +x start.sh && bash start.sh"
 
