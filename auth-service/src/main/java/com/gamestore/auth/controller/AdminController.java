@@ -76,9 +76,28 @@ public class AdminController {
         return ResponseEntity.ok(collection);
     }
     
-    @Operation(summary = "Listar todos los usuarios (formato simple)", description = "Obtiene la lista completa de usuarios en formato array simple para aplicaciones móviles")
+    @Operation(
+        summary = "Listar todos los usuarios (formato simple)", 
+        description = "Obtiene la lista completa de usuarios en formato array simple (sin HATEOAS) para aplicaciones móviles " +
+                      "o clientes que no necesitan los enlaces de navegación. Retorna los mismos datos que el endpoint principal " +
+                      "pero en un formato más ligero. Solo administradores pueden acceder."
+    )
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Lista de usuarios obtenida exitosamente")
+        @ApiResponse(
+            responseCode = "200", 
+            description = "Lista de usuarios obtenida exitosamente en formato simple. Retorna lista vacía si no hay usuarios.",
+            content = @Content(schema = @Schema(implementation = List.class))
+        ),
+        @ApiResponse(
+            responseCode = "403", 
+            description = "No autorizado: se requiere rol de administrador",
+            content = @Content(schema = @Schema(example = "{\"error\": \"No autorizado\"}"))
+        ),
+        @ApiResponse(
+            responseCode = "500", 
+            description = "Error interno del servidor al obtener usuarios",
+            content = @Content(schema = @Schema(example = "{\"error\": \"Error al obtener usuarios\"}"))
+        )
     })
     @GetMapping("/simple")
     public ResponseEntity<List<UserResponse>> getAllUsersSimple() {
@@ -307,9 +326,27 @@ public class AdminController {
         }
     }
     
-    @Operation(summary = "Listar todos los administradores", description = "Obtiene la lista completa de administradores (solo super administradores)")
+    @Operation(
+        summary = "Listar todos los administradores", 
+        description = "Obtiene la lista completa de administradores del sistema. Solo incluye usuarios con rol de administrador " +
+                      "(super administradores). Útil para gestionar permisos y accesos administrativos. Solo administradores pueden acceder."
+    )
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Lista de administradores obtenida exitosamente")
+        @ApiResponse(
+            responseCode = "200", 
+            description = "Lista de administradores obtenida exitosamente. Retorna lista vacía si no hay administradores.",
+            content = @Content(schema = @Schema(implementation = CollectionModel.class))
+        ),
+        @ApiResponse(
+            responseCode = "403", 
+            description = "No autorizado: se requiere rol de administrador",
+            content = @Content(schema = @Schema(example = "{\"error\": \"No autorizado\"}"))
+        ),
+        @ApiResponse(
+            responseCode = "500", 
+            description = "Error interno del servidor al obtener administradores",
+            content = @Content(schema = @Schema(example = "{\"error\": \"Error al obtener administradores\"}"))
+        )
     })
     @GetMapping("/admins")
     public ResponseEntity<CollectionModel<EntityModel<AdminResponse>>> getAllAdmins() {
@@ -330,14 +367,37 @@ public class AdminController {
         return ResponseEntity.ok(collection);
     }
     
-    @Operation(summary = "Obtener administrador por ID", description = "Obtiene los detalles de un administrador específico")
+    @Operation(
+        summary = "Obtener administrador por ID", 
+        description = "Obtiene los detalles completos de un administrador específico, incluyendo información de perfil, " +
+                      "estado de la cuenta y datos de contacto. Solo administradores pueden acceder."
+    )
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Administrador encontrado",
-                content = @Content(schema = @Schema(implementation = AdminResponse.class))),
-        @ApiResponse(responseCode = "404", description = "Administrador no encontrado")
+        @ApiResponse(
+            responseCode = "200", 
+            description = "Administrador encontrado exitosamente",
+            content = @Content(schema = @Schema(implementation = AdminResponse.class))
+        ),
+        @ApiResponse(
+            responseCode = "404", 
+            description = "Administrador no encontrado con el ID especificado",
+            content = @Content(schema = @Schema(example = "{\"error\": \"Administrador con ID 1 no encontrado\"}"))
+        ),
+        @ApiResponse(
+            responseCode = "403", 
+            description = "No autorizado: se requiere rol de administrador",
+            content = @Content(schema = @Schema(example = "{\"error\": \"No autorizado\"}"))
+        ),
+        @ApiResponse(
+            responseCode = "400", 
+            description = "ID de administrador inválido",
+            content = @Content(schema = @Schema(example = "{\"error\": \"ID de administrador inválido\"}"))
+        )
     })
     @GetMapping("/admins/{id}")
-    public ResponseEntity<EntityModel<AdminResponse>> getAdminById(@PathVariable Long id) {
+    public ResponseEntity<EntityModel<AdminResponse>> getAdminById(
+            @Parameter(description = "ID del administrador", example = "1", required = true)
+            @PathVariable Long id) {
         try {
             AdminResponse admin = authService.getAdminById(id);
             EntityModel<AdminResponse> resource = EntityModel.of(admin);

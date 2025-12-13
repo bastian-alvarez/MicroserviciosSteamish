@@ -86,13 +86,34 @@ public class ModeratorController {
         }
     }
     
-    @Operation(summary = "Obtener comentarios de un usuario", description = "Obtiene todos los comentarios (incluyendo ocultos) publicados por un usuario específico. Solo moderadores.")
+    @Operation(
+        summary = "Obtener comentarios de un usuario", 
+        description = "Obtiene todos los comentarios (incluyendo ocultos) publicados por un usuario específico. " +
+                      "Este endpoint muestra comentarios que han sido ocultos por moderadores, lo cual no es visible " +
+                      "en los endpoints públicos. Útil para moderadores que necesitan revisar el historial completo " +
+                      "de comentarios de un usuario al tomar decisiones de moderación. Solo moderadores pueden acceder."
+    )
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Lista de comentarios obtenida exitosamente"),
-        @ApiResponse(responseCode = "403", description = "No autorizado - Se requiere rol de moderador")
+        @ApiResponse(
+            responseCode = "200", 
+            description = "Lista de comentarios obtenida exitosamente. Incluye comentarios visibles y ocultos.",
+            content = @Content(schema = @Schema(implementation = CollectionModel.class))
+        ),
+        @ApiResponse(
+            responseCode = "403", 
+            description = "No autorizado: se requiere rol de moderador",
+            content = @Content(schema = @Schema(example = "{\"error\": \"No autorizado - Se requiere rol de moderador\"}"))
+        ),
+        @ApiResponse(
+            responseCode = "404", 
+            description = "Usuario no encontrado con el ID especificado",
+            content = @Content(schema = @Schema(example = "{\"error\": \"Usuario con ID 5 no encontrado\"}"))
+        )
     })
     @GetMapping("/users/{userId}/comments")
-    public ResponseEntity<CollectionModel<EntityModel<CommentResponse>>> getUserComments(@PathVariable Long userId) {
+    public ResponseEntity<CollectionModel<EntityModel<CommentResponse>>> getUserComments(
+            @Parameter(description = "ID del usuario", example = "5", required = true)
+            @PathVariable Long userId) {
         List<CommentResponse> comments = commentService.getCommentsByUser(userId, true); // includeHidden = true
         
         List<EntityModel<CommentResponse>> commentResources = comments.stream()
